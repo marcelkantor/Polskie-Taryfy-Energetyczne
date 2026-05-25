@@ -23,6 +23,26 @@
       "already_configured": "Ta taryfa dla wybranego operatora jest juz skonfigurowana."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zmiana taryfy i stawek",
+        "description": "Zaktualizuj operatora, taryfe, sensor zuzycia albo stawki.",
+        "data": {
+          "name": "Nazwa",
+          "operator": "Operator",
+          "tariff": "Taryfa",
+          "energy_entity": "Sensor zuzycia energii lub mocy",
+          "use_custom_rates": "Uzyj wlasnych stawek",
+          "zone_1_rate": "Stawka dzienna lub jednostrefowa",
+          "night_rate": "Stawka nocna/weekendowa",
+          "distribution_rate": "Stawka dystrybucyjna",
+          "fixed_monthly_fee": "Oplata stala miesieczna",
+          "tax_rate": "VAT (%)"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "current_energy_price": {
@@ -40,4 +60,3 @@
     }
   }
 }
-

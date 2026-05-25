@@ -16,7 +16,12 @@ Integracja Home Assistant do monitorowania polskich taryf energetycznych, stawek
 - `DataUpdateCoordinator` przygotowany pod pobieranie cen i prognoz z API,
 - sensory ceny bieżącej, szacowanego kosztu godzinowego oraz prognoz cenowych.
 
+## Zmiana taryfy i stawek
+
+Po instalacji przejdz do `Ustawienia -> Urzadzenia i uslugi -> Polskie Taryfy Energetyczne -> Konfiguruj`.
+
+W opcjach integracji mozna zmienic operatora, taryfe, sensor zuzycia energii oraz wszystkie stawki. Po zapisaniu Home Assistant przeladuje wpis integracji i sensory zaczna uzywac nowych wartosci.
+
 ## Status
 
 To jest szkielet integracji. Modul `api.py` zawiera przykladowego klienta z fallbackiem na stawki wpisane przez uzytkownika.
-

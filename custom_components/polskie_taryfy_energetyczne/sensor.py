@@ -89,7 +89,8 @@ def _current_hour_cost(
     entry: ConfigEntry,
 ) -> Decimal | None:
     """Estimate current hourly cost from an optional power/energy sensor."""
-    entity_id = entry.data.get(CONF_ENERGY_ENTITY)
+    config = entry.data | entry.options
+    entity_id = config.get(CONF_ENERGY_ENTITY)
     if entity_id is None:
         return None
 
@@ -190,12 +191,13 @@ class PTESensor(CoordinatorEntity[PTEDataUpdateCoordinator], SensorEntity):
         super().__init__(coordinator)
         self.entry = entry
         self.entity_description = description
+        config = entry.data | entry.options
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": entry.data.get(CONF_NAME, DEFAULT_NAME),
+            "name": config.get(CONF_NAME, DEFAULT_NAME),
             "manufacturer": "Polskie Taryfy Energetyczne",
-            "model": entry.data.get(CONF_TARIFF),
+            "model": config.get(CONF_TARIFF),
         }
 
     @property

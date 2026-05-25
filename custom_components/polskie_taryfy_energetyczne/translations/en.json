@@ -23,6 +23,26 @@
       "already_configured": "This tariff is already configured for the selected operator."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Change tariff and rates",
+        "description": "Update the operator, tariff, energy sensor or rates.",
+        "data": {
+          "name": "Name",
+          "operator": "Operator",
+          "tariff": "Tariff",
+          "energy_entity": "Energy or power sensor",
+          "use_custom_rates": "Use custom rates",
+          "zone_1_rate": "Day or single-zone rate",
+          "night_rate": "Night/weekend rate",
+          "distribution_rate": "Distribution rate",
+          "fixed_monthly_fee": "Fixed monthly fee",
+          "tax_rate": "VAT (%)"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "current_energy_price": {
@@ -40,4 +60,3 @@
     }
   }
 }
-

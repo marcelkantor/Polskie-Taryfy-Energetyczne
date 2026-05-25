@@ -6,8 +6,14 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_NAME
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
@@ -31,6 +37,12 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Polskie Taryfy Energetyczne."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        """Create the options flow."""
+        return PTEOptionsFlow()
 
     async def async_step_user(
         self,
@@ -58,36 +70,87 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def _user_schema(self) -> vol.Schema:
         """Return the user step schema."""
-        return vol.Schema(
-            {
-                vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_OPERATOR): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[
-                            selector.SelectOptionDict(value=value, label=label)
-                            for value, label in OPERATORS.items()
-                        ],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Required(CONF_TARIFF): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[
-                            selector.SelectOptionDict(value=value, label=value)
-                            for value in TARIFFS
-                        ],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                    )
-                ),
-                vol.Optional(CONF_ENERGY_ENTITY): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_USE_CUSTOM_RATES, default=True): bool,
-                vol.Required(CONF_ZONE_1_RATE, default=0.75): vol.Coerce(float),
-                vol.Optional(CONF_NIGHT_RATE, default=0.42): vol.Coerce(float),
-                vol.Optional(CONF_DISTRIBUTION_RATE, default=0.35): vol.Coerce(float),
-                vol.Optional(CONF_FIXED_MONTHLY_FEE, default=18.50): vol.Coerce(float),
-                vol.Optional(CONF_TAX_RATE, default=23.0): vol.Coerce(float),
-            }
+        return _tariff_schema()
+
+
+class PTEOptionsFlow(OptionsFlow):
+    """Handle options for Polskie Taryfy Energetyczne."""
+
+    async def async_step_init(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Manage integration options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        values = self.config_entry.data | self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_tariff_schema(values),
         )
 
+
+def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
+    """Return the tariff configuration schema."""
+    values = values or {}
+    return vol.Schema(
+        {
+            vol.Optional(
+                CONF_NAME,
+                default=values.get(CONF_NAME, DEFAULT_NAME),
+            ): str,
+            vol.Required(
+                CONF_OPERATOR,
+                default=values.get(CONF_OPERATOR, next(iter(OPERATORS))),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(value=value, label=label)
+                        for value, label in OPERATORS.items()
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_TARIFF,
+                default=values.get(CONF_TARIFF, TARIFFS[0]),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(value=value, label=value)
+                        for value in TARIFFS
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                CONF_ENERGY_ENTITY,
+                default=values.get(CONF_ENERGY_ENTITY),
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Required(
+                CONF_USE_CUSTOM_RATES,
+                default=values.get(CONF_USE_CUSTOM_RATES, True),
+            ): bool,
+            vol.Required(
+                CONF_ZONE_1_RATE,
+                default=values.get(CONF_ZONE_1_RATE, 0.75),
+            ): vol.Coerce(float),
+            vol.Optional(
+                CONF_NIGHT_RATE,
+                default=values.get(CONF_NIGHT_RATE, 0.42),
+            ): vol.Coerce(float),
+            vol.Optional(
+                CONF_DISTRIBUTION_RATE,
+                default=values.get(CONF_DISTRIBUTION_RATE, 0.35),
+            ): vol.Coerce(float),
+            vol.Optional(
+                CONF_FIXED_MONTHLY_FEE,
+                default=values.get(CONF_FIXED_MONTHLY_FEE, 18.50),
+            ): vol.Coerce(float),
+            vol.Optional(
+                CONF_TAX_RATE,
+                default=values.get(CONF_TAX_RATE, 23.0),
+            ): vol.Coerce(float),
+        }
+    )

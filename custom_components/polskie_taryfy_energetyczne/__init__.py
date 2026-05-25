@@ -17,12 +17,13 @@ type PTEConfigEntry = ConfigEntry[PTEDataUpdateCoordinator]
 
 async def async_setup_entry(hass: HomeAssistant, entry: PTEConfigEntry) -> bool:
     """Set up Polskie Taryfy Energetyczne from a config entry."""
-    client = PTEApiClient(hass, entry.data)
+    client = PTEApiClient(hass, entry.data | entry.options)
     coordinator = PTEDataUpdateCoordinator(hass, client, entry)
 
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
 
+    entry.async_on_unload(entry.add_update_listener(async_update_options))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -31,3 +32,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: PTEConfigEntry) -> bool
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
+
+async def async_update_options(hass: HomeAssistant, entry: PTEConfigEntry) -> None:
+    """Reload the config entry when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
