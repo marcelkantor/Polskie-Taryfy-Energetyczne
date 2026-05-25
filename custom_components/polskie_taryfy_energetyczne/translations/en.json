@@ -1,0 +1,43 @@
+{
+  "title": "Polish Energy Tariffs",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Tariff configuration",
+        "description": "Choose your operator, tariff and rates used for calculations.",
+        "data": {
+          "name": "Name",
+          "operator": "Operator",
+          "tariff": "Tariff",
+          "energy_entity": "Energy or power sensor",
+          "use_custom_rates": "Use custom rates",
+          "zone_1_rate": "Day or single-zone rate",
+          "night_rate": "Night/weekend rate",
+          "distribution_rate": "Distribution rate",
+          "fixed_monthly_fee": "Fixed monthly fee",
+          "tax_rate": "VAT (%)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This tariff is already configured for the selected operator."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_energy_price": {
+        "name": "Current energy price"
+      },
+      "current_hour_cost": {
+        "name": "Current cost"
+      },
+      "forecast_min_price": {
+        "name": "Forecast minimum price"
+      },
+      "forecast_max_price": {
+        "name": "Forecast maximum price"
+      }
+    }
+  }
+}
+

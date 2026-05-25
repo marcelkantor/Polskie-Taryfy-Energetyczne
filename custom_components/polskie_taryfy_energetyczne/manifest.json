@@ -1,0 +1,13 @@
+{
+  "domain": "polskie_taryfy_energetyczne",
+  "name": "Polskie Taryfy Energetyczne",
+  "codeowners": ["@your-github-username"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/your-github-username/polskie-taryfy-energetyczne",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/your-github-username/polskie-taryfy-energetyczne/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
+

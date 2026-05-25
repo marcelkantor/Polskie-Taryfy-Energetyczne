@@ -1,0 +1,43 @@
+{
+  "title": "Polskie Taryfy Energetyczne",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Konfiguracja taryfy",
+        "description": "Wybierz operatora, taryfe i stawki uzywane do wyliczen.",
+        "data": {
+          "name": "Nazwa",
+          "operator": "Operator",
+          "tariff": "Taryfa",
+          "energy_entity": "Sensor zuzycia energii lub mocy",
+          "use_custom_rates": "Uzyj wlasnych stawek",
+          "zone_1_rate": "Stawka dzienna lub jednostrefowa",
+          "night_rate": "Stawka nocna/weekendowa",
+          "distribution_rate": "Stawka dystrybucyjna",
+          "fixed_monthly_fee": "Oplata stala miesieczna",
+          "tax_rate": "VAT (%)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Ta taryfa dla wybranego operatora jest juz skonfigurowana."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_energy_price": {
+        "name": "Cena energii teraz"
+      },
+      "current_hour_cost": {
+        "name": "Koszt biezacy"
+      },
+      "forecast_min_price": {
+        "name": "Prognoza ceny minimalnej"
+      },
+      "forecast_max_price": {
+        "name": "Prognoza ceny maksymalnej"
+      }
+    }
+  }
+}
+
