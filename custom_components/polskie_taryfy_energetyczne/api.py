@@ -21,6 +21,7 @@ from .const import (
     CONF_TARIFF,
     CONF_TAX_RATE,
     CONF_USE_CUSTOM_RATES,
+    CONF_ZONE_1_RATE,
     PRICE_ZONE_HIGH,
     PRICE_ZONE_LOW,
     PRICE_ZONE_SINGLE,
@@ -92,7 +93,9 @@ class PTEApiClient:
         """Build data from user-provided rates."""
         now = dt_util.utcnow()
         tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
-        high_rate = Decimal(str(self._config.get(CONF_HIGH_RATE, 0)))
+        high_rate = Decimal(
+            str(self._config.get(CONF_HIGH_RATE, self._config.get(CONF_ZONE_1_RATE, 0)))
+        )
         low_rate = Decimal(
             str(
                 self._config.get(

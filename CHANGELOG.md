@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Fixed inconsistent options flow labels by replacing the remaining legacy
+  `zone_1_rate` form field with `high_rate`.
+- Kept fallbacks for existing `zone_1_rate` and `night_rate` configuration data.
+
 ## 0.2.0
 
 - Replaced day/night wording with high/low price zone terminology.
