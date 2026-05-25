@@ -10,7 +10,7 @@ from .api import PTEApiClient
 from .const import DOMAIN
 from .coordinator import PTEDataUpdateCoordinator
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 type PTEConfigEntry = ConfigEntry[PTEDataUpdateCoordinator]
 

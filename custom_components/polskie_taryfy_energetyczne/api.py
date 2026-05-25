@@ -14,13 +14,18 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_DISTRIBUTION_RATE,
     CONF_FIXED_MONTHLY_FEE,
+    CONF_HIGH_RATE,
+    CONF_LOW_RATE,
     CONF_NIGHT_RATE,
     CONF_OPERATOR,
     CONF_TARIFF,
     CONF_TAX_RATE,
     CONF_USE_CUSTOM_RATES,
-    CONF_ZONE_1_RATE,
+    PRICE_ZONE_HIGH,
+    PRICE_ZONE_LOW,
+    PRICE_ZONE_SINGLE,
     TARIFF_G11,
+    TARIFF_G12W,
 )
 
 
@@ -31,6 +36,7 @@ class PTEForecastPoint:
     start: datetime
     end: datetime
     price: Decimal
+    price_zone: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -43,6 +49,8 @@ class PTETariffData:
     tax_rate: Decimal
     tariff: str
     operator: str
+    current_price_zone: str
+    next_price_zone_change: datetime | None
     forecast: list[PTEForecastPoint]
     fetched_at: datetime
 
@@ -84,8 +92,15 @@ class PTEApiClient:
         """Build data from user-provided rates."""
         now = dt_util.utcnow()
         tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
-        day_rate = Decimal(str(self._config.get(CONF_ZONE_1_RATE, 0)))
-        night_rate = Decimal(str(self._config.get(CONF_NIGHT_RATE, day_rate)))
+        high_rate = Decimal(str(self._config.get(CONF_HIGH_RATE, 0)))
+        low_rate = Decimal(
+            str(
+                self._config.get(
+                    CONF_LOW_RATE,
+                    self._config.get(CONF_NIGHT_RATE, high_rate),
+                )
+            )
+        )
         distribution_rate = Decimal(str(self._config.get(CONF_DISTRIBUTION_RATE, 0)))
         fixed_monthly_fee = Decimal(str(self._config.get(CONF_FIXED_MONTHLY_FEE, 0)))
         tax_rate = Decimal(str(self._config.get(CONF_TAX_RATE, 23)))
@@ -100,17 +115,30 @@ class PTEApiClient:
                 PTEForecastPoint(
                     start=start,
                     end=end,
-                    price=self._select_rate_for_time(tariff, start, day_rate, night_rate),
+                    price=self._select_rate_for_time(
+                        tariff,
+                        start,
+                        high_rate,
+                        low_rate,
+                    ),
+                    price_zone=self._select_price_zone_for_time(tariff, start),
                 )
             )
 
+        current_price_zone = self._select_price_zone_for_time(tariff, now)
         return PTETariffData(
-            current_price=self._select_rate_for_time(tariff, now, day_rate, night_rate),
+            current_price=self._select_rate_for_time(tariff, now, high_rate, low_rate),
             distribution_rate=distribution_rate,
             fixed_monthly_fee=fixed_monthly_fee,
             tax_rate=tax_rate,
             tariff=tariff,
             operator=self._config[CONF_OPERATOR],
+            current_price_zone=current_price_zone,
+            next_price_zone_change=self._find_next_price_zone_change(
+                tariff,
+                now,
+                current_price_zone,
+            ),
             forecast=forecast,
             fetched_at=now,
         )
@@ -119,25 +147,53 @@ class PTEApiClient:
     def _select_rate_for_time(
         tariff: str,
         moment: datetime,
-        day_rate: Decimal,
-        night_rate: Decimal,
+        high_rate: Decimal,
+        low_rate: Decimal,
     ) -> Decimal:
         """Return the active energy rate for a tariff and timestamp."""
+        price_zone = PTEApiClient._select_price_zone_for_time(tariff, moment)
+        if price_zone == PRICE_ZONE_LOW:
+            return low_rate
+        return high_rate
+
+    @staticmethod
+    def _select_price_zone_for_time(tariff: str, moment: datetime) -> str:
+        """Return the active price zone for a tariff and timestamp."""
         local = dt_util.as_local(moment)
         hour = local.hour
 
         if tariff == TARIFF_G11:
-            return day_rate
+            return PRICE_ZONE_SINGLE
 
-        is_night = hour < 6 or hour >= 22
-        is_afternoon_window = 13 <= hour < 15
+        is_low_late_window = hour < 6 or hour >= 22
+        is_low_afternoon_window = 13 <= hour < 15
         is_weekend = local.weekday() >= 5
 
-        if tariff == "G12w" and is_weekend:
-            return night_rate
+        if tariff == TARIFF_G12W and is_weekend:
+            return PRICE_ZONE_LOW
 
-        if is_night or is_afternoon_window:
-            return night_rate
+        if is_low_late_window or is_low_afternoon_window:
+            return PRICE_ZONE_LOW
 
-        return day_rate
+        return PRICE_ZONE_HIGH
 
+    @staticmethod
+    def _find_next_price_zone_change(
+        tariff: str,
+        moment: datetime,
+        current_price_zone: str,
+    ) -> datetime | None:
+        """Find the next price zone change within the next 48 hours."""
+        if current_price_zone == PRICE_ZONE_SINGLE:
+            return None
+
+        start = moment.replace(second=0, microsecond=0)
+        for offset in range(1, 48 * 60 + 1):
+            candidate = start + timedelta(minutes=offset)
+            if (
+                PTEApiClient._select_price_zone_for_time(tariff, candidate)
+                != current_price_zone
+            ):
+                return candidate
+
+        return None

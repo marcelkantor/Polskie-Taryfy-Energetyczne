@@ -11,8 +11,8 @@
           "tariff": "Taryfa",
           "energy_entity": "Sensor zuzycia energii lub mocy",
           "use_custom_rates": "Uzyj wlasnych stawek",
-          "zone_1_rate": "Stawka dzienna lub jednostrefowa",
-          "night_rate": "Stawka nocna/weekendowa",
+          "zone_1_rate": "Stawka wysoka lub jednostrefowa",
+          "low_rate": "Stawka niska",
           "distribution_rate": "Stawka dystrybucyjna",
           "fixed_monthly_fee": "Oplata stala miesieczna",
           "tax_rate": "VAT (%)"
@@ -34,8 +34,8 @@
           "tariff": "Taryfa",
           "energy_entity": "Sensor zuzycia energii lub mocy",
           "use_custom_rates": "Uzyj wlasnych stawek",
-          "zone_1_rate": "Stawka dzienna lub jednostrefowa",
-          "night_rate": "Stawka nocna/weekendowa",
+          "zone_1_rate": "Stawka wysoka lub jednostrefowa",
+          "low_rate": "Stawka niska",
           "distribution_rate": "Stawka dystrybucyjna",
           "fixed_monthly_fee": "Oplata stala miesieczna",
           "tax_rate": "VAT (%)"
@@ -56,6 +56,26 @@
       },
       "forecast_max_price": {
         "name": "Prognoza ceny maksymalnej"
+      },
+      "current_price_zone": {
+        "name": "Aktualna strefa cenowa"
+      },
+      "next_price_zone_change": {
+        "name": "Nastepna zmiana strefy cenowej"
+      },
+      "minutes_to_price_zone_change": {
+        "name": "Czas do zmiany strefy cenowej"
+      },
+      "forecast_average_price": {
+        "name": "Prognoza ceny sredniej"
+      }
+    },
+    "binary_sensor": {
+      "low_price_zone": {
+        "name": "Niska strefa cenowa"
+      },
+      "price_below_forecast_average": {
+        "name": "Cena ponizej sredniej prognozy"
       }
     }
   }

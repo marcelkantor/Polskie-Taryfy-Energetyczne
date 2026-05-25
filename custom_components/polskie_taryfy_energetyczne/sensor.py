@@ -14,10 +14,11 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .api import PTETariffData
 from .const import (
@@ -26,6 +27,7 @@ from .const import (
     ATTR_FIXED_MONTHLY_FEE,
     ATTR_FORECAST,
     ATTR_OPERATOR,
+    ATTR_PRICE_ZONE,
     ATTR_TARIFF,
     ATTR_TAX_RATE,
     CONF_ENERGY_ENTITY,
@@ -43,7 +45,7 @@ CURRENCY = "PLN"
 class PTESensorEntityDescription(SensorEntityDescription):
     """Describes PTE sensor entity."""
 
-    value_fn: Callable[[PTETariffData, HomeAssistant, ConfigEntry], Decimal | None]
+    value_fn: Callable[[PTETariffData, HomeAssistant, ConfigEntry], Any]
     attrs_fn: Callable[[PTETariffData], dict[str, Any]] | None = None
 
 
@@ -52,10 +54,16 @@ def _base_attrs(data: PTETariffData) -> dict[str, Any]:
     return {
         ATTR_OPERATOR: data.operator,
         ATTR_TARIFF: data.tariff,
+        ATTR_PRICE_ZONE: data.current_price_zone,
         ATTR_DISTRIBUTION_RATE: float(data.distribution_rate),
         ATTR_FIXED_MONTHLY_FEE: float(data.fixed_monthly_fee),
         ATTR_TAX_RATE: float(data.tax_rate),
         ATTR_FETCHED_AT: data.fetched_at.isoformat(),
+        "next_price_zone_change": (
+            data.next_price_zone_change.isoformat()
+            if data.next_price_zone_change is not None
+            else None
+        ),
     }
 
 
@@ -67,6 +75,7 @@ def _forecast_attrs(data: PTETariffData) -> dict[str, Any]:
             "start": point.start.isoformat(),
             "end": point.end.isoformat(),
             "price": float(point.price),
+            "price_zone": point.price_zone,
         }
         for point in data.forecast
     ]
@@ -126,6 +135,54 @@ def _forecast_max(
     return max((point.price for point in data.forecast), default=None)
 
 
+def _current_price_zone(
+    data: PTETariffData,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> str:
+    """Return current price zone."""
+    _ = hass, entry
+    return data.current_price_zone
+
+
+def _next_price_zone_change(
+    data: PTETariffData,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> Any:
+    """Return next price zone change timestamp."""
+    _ = hass, entry
+    return data.next_price_zone_change
+
+
+def _minutes_to_price_zone_change(
+    data: PTETariffData,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> Decimal | None:
+    """Return minutes until next price zone change."""
+    _ = entry
+    if data.next_price_zone_change is None:
+        return None
+    _ = hass
+    seconds = (data.next_price_zone_change - dt_util.utcnow()).total_seconds()
+    return Decimal(str(round(max(seconds, 0) / 60, 1)))
+
+
+def _forecast_average(
+    data: PTETariffData,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> Decimal | None:
+    """Return average forecast price."""
+    _ = hass, entry
+    if not data.forecast:
+        return None
+    return sum((point.price for point in data.forecast), Decimal("0")) / Decimal(
+        len(data.forecast)
+    )
+
+
 SENSORS: tuple[PTESensorEntityDescription, ...] = (
     PTESensorEntityDescription(
         key="current_energy_price",
@@ -158,6 +215,35 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         native_unit_of_measurement=PRICE_UNIT,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=_forecast_max,
+        attrs_fn=_forecast_attrs,
+    ),
+    PTESensorEntityDescription(
+        key="current_price_zone",
+        translation_key="current_price_zone",
+        value_fn=_current_price_zone,
+        attrs_fn=_base_attrs,
+    ),
+    PTESensorEntityDescription(
+        key="next_price_zone_change",
+        translation_key="next_price_zone_change",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=_next_price_zone_change,
+        attrs_fn=_base_attrs,
+    ),
+    PTESensorEntityDescription(
+        key="minutes_to_price_zone_change",
+        translation_key="minutes_to_price_zone_change",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_minutes_to_price_zone_change,
+        attrs_fn=_base_attrs,
+    ),
+    PTESensorEntityDescription(
+        key="forecast_average_price",
+        translation_key="forecast_average_price",
+        native_unit_of_measurement=PRICE_UNIT,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_forecast_average,
         attrs_fn=_forecast_attrs,
     ),
 )
@@ -201,7 +287,7 @@ class PTESensor(CoordinatorEntity[PTEDataUpdateCoordinator], SensorEntity):
         }
 
     @property
-    def native_value(self) -> Decimal | None:
+    def native_value(self) -> Any:
         """Return the state of the sensor."""
         if self.coordinator.data is None:
             return None

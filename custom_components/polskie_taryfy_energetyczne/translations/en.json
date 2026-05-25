@@ -11,8 +11,8 @@
           "tariff": "Tariff",
           "energy_entity": "Energy or power sensor",
           "use_custom_rates": "Use custom rates",
-          "zone_1_rate": "Day or single-zone rate",
-          "night_rate": "Night/weekend rate",
+          "zone_1_rate": "High or single-zone rate",
+          "low_rate": "Low price zone rate",
           "distribution_rate": "Distribution rate",
           "fixed_monthly_fee": "Fixed monthly fee",
           "tax_rate": "VAT (%)"
@@ -34,8 +34,8 @@
           "tariff": "Tariff",
           "energy_entity": "Energy or power sensor",
           "use_custom_rates": "Use custom rates",
-          "zone_1_rate": "Day or single-zone rate",
-          "night_rate": "Night/weekend rate",
+          "zone_1_rate": "High or single-zone rate",
+          "low_rate": "Low price zone rate",
           "distribution_rate": "Distribution rate",
           "fixed_monthly_fee": "Fixed monthly fee",
           "tax_rate": "VAT (%)"
@@ -56,6 +56,26 @@
       },
       "forecast_max_price": {
         "name": "Forecast maximum price"
+      },
+      "current_price_zone": {
+        "name": "Current price zone"
+      },
+      "next_price_zone_change": {
+        "name": "Next price zone change"
+      },
+      "minutes_to_price_zone_change": {
+        "name": "Time to price zone change"
+      },
+      "forecast_average_price": {
+        "name": "Forecast average price"
+      }
+    },
+    "binary_sensor": {
+      "low_price_zone": {
+        "name": "Low price zone"
+      },
+      "price_below_forecast_average": {
+        "name": "Price below forecast average"
       }
     }
   }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Replaced day/night wording with high/low price zone terminology.
+- Added EMS-oriented sensors for current price zone, next zone change, minutes to zone change and forecast average price.
+- Added binary sensors for low price zone and price below forecast average.
+- Kept backward compatibility for existing `night_rate` options.
+
 ## 0.1.1
 
 - Added an options flow for changing tariffs and rates after installation.
@@ -11,4 +18,3 @@
 
 - Initial Home Assistant custom integration skeleton.
 - Added HACS structure, config flow, coordinator and sensor examples.
-
