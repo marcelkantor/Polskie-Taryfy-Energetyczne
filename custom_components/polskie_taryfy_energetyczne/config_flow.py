@@ -22,12 +22,10 @@ from .const import (
     CONF_FIXED_MONTHLY_FEE,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
-    CONF_NIGHT_RATE,
     CONF_OPERATOR,
     CONF_TARIFF,
     CONF_TAX_RATE,
     CONF_USE_CUSTOM_RATES,
-    CONF_ZONE_1_RATE,
     DEFAULT_NAME,
     DOMAIN,
     OPERATORS,
@@ -136,11 +134,11 @@ def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
             ): bool,
             vol.Required(
                 CONF_HIGH_RATE,
-                default=values.get(CONF_HIGH_RATE, values.get(CONF_ZONE_1_RATE, 0.75)),
+                default=values.get(CONF_HIGH_RATE, 0.75),
             ): vol.Coerce(float),
             vol.Optional(
                 CONF_LOW_RATE,
-                default=values.get(CONF_LOW_RATE, values.get(CONF_NIGHT_RATE, 0.42)),
+                default=values.get(CONF_LOW_RATE, 0.42),
             ): vol.Coerce(float),
             vol.Optional(
                 CONF_DISTRIBUTION_RATE,

@@ -16,12 +16,10 @@ from .const import (
     CONF_FIXED_MONTHLY_FEE,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
-    CONF_NIGHT_RATE,
     CONF_OPERATOR,
     CONF_TARIFF,
     CONF_TAX_RATE,
     CONF_USE_CUSTOM_RATES,
-    CONF_ZONE_1_RATE,
     PRICE_ZONE_HIGH,
     PRICE_ZONE_LOW,
     PRICE_ZONE_SINGLE,
@@ -60,8 +58,8 @@ class PTEApiClient:
     """Small API wrapper.
 
     Replace `_async_fetch_remote_prices` with a provider-specific implementation when
-    the data source is selected. The current fallback keeps the integration useful
-    for fixed and manually entered tariffs.
+    the data source is selected. The current manual-rate path keeps the integration
+    useful for fixed and manually entered tariffs.
     """
 
     def __init__(self, hass: HomeAssistant, config: dict[str, Any]) -> None:
@@ -93,17 +91,8 @@ class PTEApiClient:
         """Build data from user-provided rates."""
         now = dt_util.utcnow()
         tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
-        high_rate = Decimal(
-            str(self._config.get(CONF_HIGH_RATE, self._config.get(CONF_ZONE_1_RATE, 0)))
-        )
-        low_rate = Decimal(
-            str(
-                self._config.get(
-                    CONF_LOW_RATE,
-                    self._config.get(CONF_NIGHT_RATE, high_rate),
-                )
-            )
-        )
+        high_rate = Decimal(str(self._config.get(CONF_HIGH_RATE, 0)))
+        low_rate = Decimal(str(self._config.get(CONF_LOW_RATE, high_rate)))
         distribution_rate = Decimal(str(self._config.get(CONF_DISTRIBUTION_RATE, 0)))
         fixed_monthly_fee = Decimal(str(self._config.get(CONF_FIXED_MONTHLY_FEE, 0)))
         tax_rate = Decimal(str(self._config.get(CONF_TAX_RATE, 23)))
