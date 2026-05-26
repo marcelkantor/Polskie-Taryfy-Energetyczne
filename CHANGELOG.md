@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Split configuration into two steps so custom gross price fields are shown only
+  when the custom price source is selected.
+- Updated Polish configuration labels and descriptions.
+
 ## 0.3.0
 
 - Reworked pricing model around gross `PLN/kWh` prices.

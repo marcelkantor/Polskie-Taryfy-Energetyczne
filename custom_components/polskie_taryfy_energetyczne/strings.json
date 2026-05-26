@@ -3,14 +3,20 @@
   "config": {
     "step": {
       "user": {
-        "title": "Konfiguracja taryfy",
+        "title": "Konfiguracja cen brutto",
         "description": "Wybierz zrodlo cen brutto, taryfe i opcjonalny sensor zuzycia.",
         "data": {
           "name": "Nazwa",
           "price_source": "Zrodlo cen",
           "preset_operator": "Operator dla presetow G11",
           "tariff": "Taryfa",
-          "energy_entity": "Sensor zuzycia energii lub mocy",
+          "energy_entity": "Sensor zuzycia energii lub mocy"
+        }
+      },
+      "custom_rates": {
+        "title": "Wlasne ceny brutto",
+        "description": "Podaj ceny brutto w PLN/kWh.",
+        "data": {
           "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
           "low_rate": "Cena brutto strefy niskiej"
         }
@@ -23,14 +29,20 @@
   "options": {
     "step": {
       "init": {
-        "title": "Zmiana taryfy i stawek",
-        "description": "Zaktualizuj zrodlo cen brutto, taryfe, sensor zuzycia albo ceny.",
+        "title": "Zmiana zrodla cen i taryfy",
+        "description": "Zaktualizuj zrodlo cen brutto, taryfe albo sensor zuzycia.",
         "data": {
           "name": "Nazwa",
           "price_source": "Zrodlo cen",
           "preset_operator": "Operator dla presetow G11",
           "tariff": "Taryfa",
-          "energy_entity": "Sensor zuzycia energii lub mocy",
+          "energy_entity": "Sensor zuzycia energii lub mocy"
+        }
+      },
+      "custom_rates": {
+        "title": "Wlasne ceny brutto",
+        "description": "Podaj ceny brutto w PLN/kWh.",
+        "data": {
           "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
           "low_rate": "Cena brutto strefy niskiej"
         }

@@ -36,6 +36,7 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Polskie Taryfy Energetyczne."""
 
     VERSION = 1
+    _config_data: dict[str, Any]
 
     @staticmethod
     @callback
@@ -51,6 +52,10 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            self._config_data = user_input
+            if user_input[CONF_PRICE_SOURCE] == PRICE_SOURCE_CUSTOM:
+                return await self.async_step_custom_rates()
+
             await self.async_set_unique_id(
                 f"{user_input[CONF_PRICE_SOURCE]}_{user_input[CONF_TARIFF]}_"
                 f"{user_input.get(CONF_PRESET_OPERATOR, 'average')}"
@@ -70,11 +75,35 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def _user_schema(self) -> vol.Schema:
         """Return the user step schema."""
-        return _tariff_schema()
+        return _base_schema()
+
+    async def async_step_custom_rates(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle custom gross price rates."""
+        if user_input is not None:
+            data = self._config_data | user_input
+            await self.async_set_unique_id(
+                f"{data[CONF_PRICE_SOURCE]}_{data[CONF_TARIFF]}"
+            )
+            self._abort_if_unique_id_configured()
+
+            return self.async_create_entry(
+                title=data.get(CONF_NAME, DEFAULT_NAME),
+                data=data,
+            )
+
+        return self.async_show_form(
+            step_id="custom_rates",
+            data_schema=_custom_rates_schema(self._config_data),
+        )
 
 
 class PTEOptionsFlow(OptionsFlow):
     """Handle options for Polskie Taryfy Energetyczne."""
+
+    _options_data: dict[str, Any]
 
     async def async_step_init(
         self,
@@ -82,17 +111,37 @@ class PTEOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage integration options."""
         if user_input is not None:
+            self._options_data = user_input
+            if user_input[CONF_PRICE_SOURCE] == PRICE_SOURCE_CUSTOM:
+                return await self.async_step_custom_rates()
             return self.async_create_entry(title="", data=user_input)
 
         values = self.config_entry.data | self.config_entry.options
         return self.async_show_form(
             step_id="init",
-            data_schema=_tariff_schema(values),
+            data_schema=_base_schema(values),
+        )
+
+    async def async_step_custom_rates(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Manage custom gross price rates."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title="",
+                data=self._options_data | user_input,
+            )
+
+        values = self.config_entry.data | self.config_entry.options | self._options_data
+        return self.async_show_form(
+            step_id="custom_rates",
+            data_schema=_custom_rates_schema(values),
         )
 
 
-def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
-    """Return the tariff configuration schema."""
+def _base_schema(values: dict[str, Any] | None = None) -> vol.Schema:
+    """Return the base tariff configuration schema."""
     values = values or {}
     return vol.Schema(
         {
@@ -112,7 +161,7 @@ def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
                         ),
                         selector.SelectOptionDict(
                             value=PRICE_SOURCE_CUSTOM,
-                            label="Wlasne ceny brutto",
+                            label="Własne ceny brutto",
                         ),
                     ],
                     mode=selector.SelectSelectorMode.DROPDOWN,
@@ -146,6 +195,15 @@ def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
                 CONF_ENERGY_ENTITY,
                 default=values.get(CONF_ENERGY_ENTITY),
             ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+        }
+    )
+
+
+def _custom_rates_schema(values: dict[str, Any] | None = None) -> vol.Schema:
+    """Return the custom gross rates schema."""
+    values = values or {}
+    return vol.Schema(
+        {
             vol.Required(
                 CONF_HIGH_RATE,
                 default=values.get(CONF_HIGH_RATE, 1.19),

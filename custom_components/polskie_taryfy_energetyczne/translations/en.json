@@ -3,14 +3,20 @@
   "config": {
     "step": {
       "user": {
-        "title": "Tariff configuration",
+        "title": "Gross price configuration",
         "description": "Choose the gross price source, tariff and optional consumption sensor.",
         "data": {
           "name": "Name",
           "price_source": "Price source",
           "preset_operator": "Operator for G11 presets",
           "tariff": "Tariff",
-          "energy_entity": "Energy or power sensor",
+          "energy_entity": "Energy or power sensor"
+        }
+      },
+      "custom_rates": {
+        "title": "Custom gross prices",
+        "description": "Enter gross prices in PLN/kWh.",
+        "data": {
           "high_rate": "Gross high or single-zone price",
           "low_rate": "Gross low-zone price"
         }
@@ -23,14 +29,20 @@
   "options": {
     "step": {
       "init": {
-        "title": "Change tariff and rates",
-        "description": "Update the gross price source, tariff, energy sensor or prices.",
+        "title": "Change price source and tariff",
+        "description": "Update the gross price source, tariff or energy sensor.",
         "data": {
           "name": "Name",
           "price_source": "Price source",
           "preset_operator": "Operator for G11 presets",
           "tariff": "Tariff",
-          "energy_entity": "Energy or power sensor",
+          "energy_entity": "Energy or power sensor"
+        }
+      },
+      "custom_rates": {
+        "title": "Custom gross prices",
+        "description": "Enter gross prices in PLN/kWh.",
+        "data": {
           "high_rate": "Gross high or single-zone price",
           "low_rate": "Gross low-zone price"
         }
