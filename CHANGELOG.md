@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2
+
+- Rounded gross price sensors and forecast price attributes to two decimal places.
+- Added suggested display precision for price and time-to-change sensors.
+
 ## 0.3.1
 
 - Split configuration into two steps so custom gross price fields are shown only

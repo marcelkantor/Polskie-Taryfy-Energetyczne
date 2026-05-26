@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -41,6 +41,8 @@ from .coordinator import PTEDataUpdateCoordinator
 
 PRICE_UNIT = "PLN/kWh"
 CURRENCY = "PLN"
+PRICE_PRECISION = Decimal("0.01")
+MINUTE_PRECISION = Decimal("0.1")
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -78,12 +80,22 @@ def _forecast_attrs(data: PTETariffData) -> dict[str, Any]:
         {
             "start": point.start.isoformat(),
             "end": point.end.isoformat(),
-            "price": float(point.price),
+            "price": float(_round_price(point.price)),
             "price_zone": point.price_zone,
         }
         for point in data.forecast
     ]
     return attrs
+
+
+def _round_price(value: Decimal) -> Decimal:
+    """Round a price to two decimal places."""
+    return value.quantize(PRICE_PRECISION, rounding=ROUND_HALF_UP)
+
+
+def _round_minutes(value: Decimal) -> Decimal:
+    """Round minutes to one decimal place."""
+    return value.quantize(MINUTE_PRECISION, rounding=ROUND_HALF_UP)
 
 
 def _current_total_price(
@@ -93,7 +105,7 @@ def _current_total_price(
 ) -> Decimal:
     """Return current gross energy price."""
     _ = hass, entry
-    return data.current_price
+    return _round_price(data.current_price)
 
 
 def _current_hour_cost(
@@ -116,7 +128,7 @@ def _current_hour_cost(
     except Exception:  # noqa: BLE001
         return None
 
-    return consumption * data.current_price
+    return _round_price(consumption * data.current_price)
 
 
 def _forecast_min(
@@ -126,7 +138,8 @@ def _forecast_min(
 ) -> Decimal | None:
     """Return minimum forecast price."""
     _ = hass, entry
-    return min((point.price for point in data.forecast), default=None)
+    value = min((point.price for point in data.forecast), default=None)
+    return _round_price(value) if value is not None else None
 
 
 def _forecast_max(
@@ -136,7 +149,8 @@ def _forecast_max(
 ) -> Decimal | None:
     """Return maximum forecast price."""
     _ = hass, entry
-    return max((point.price for point in data.forecast), default=None)
+    value = max((point.price for point in data.forecast), default=None)
+    return _round_price(value) if value is not None else None
 
 
 def _current_price_zone(
@@ -170,7 +184,7 @@ def _minutes_to_price_zone_change(
         return None
     _ = hass
     seconds = (data.next_price_zone_change - dt_util.utcnow()).total_seconds()
-    return Decimal(str(round(max(seconds, 0) / 60, 1)))
+    return _round_minutes(Decimal(str(max(seconds, 0) / 60)))
 
 
 def _forecast_average(
@@ -182,9 +196,10 @@ def _forecast_average(
     _ = hass, entry
     if not data.forecast:
         return None
-    return sum((point.price for point in data.forecast), Decimal("0")) / Decimal(
+    average = sum((point.price for point in data.forecast), Decimal("0")) / Decimal(
         len(data.forecast)
     )
+    return _round_price(average)
 
 
 SENSORS: tuple[PTESensorEntityDescription, ...] = (
@@ -193,6 +208,7 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         translation_key="current_energy_price",
         native_unit_of_measurement=PRICE_UNIT,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=_current_total_price,
         attrs_fn=_base_attrs,
     ),
@@ -202,6 +218,7 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         native_unit_of_measurement=CURRENCY,
         device_class=SensorDeviceClass.MONETARY,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=_current_hour_cost,
         attrs_fn=_base_attrs,
     ),
@@ -210,6 +227,7 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         translation_key="forecast_min_price",
         native_unit_of_measurement=PRICE_UNIT,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=_forecast_min,
         attrs_fn=_forecast_attrs,
     ),
@@ -218,6 +236,7 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         translation_key="forecast_max_price",
         native_unit_of_measurement=PRICE_UNIT,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=_forecast_max,
         attrs_fn=_forecast_attrs,
     ),
@@ -239,6 +258,7 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         translation_key="minutes_to_price_zone_change",
         native_unit_of_measurement=UnitOfTime.MINUTES,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
         value_fn=_minutes_to_price_zone_change,
         attrs_fn=_base_attrs,
     ),
@@ -247,6 +267,7 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         translation_key="forecast_average_price",
         native_unit_of_measurement=PRICE_UNIT,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
         value_fn=_forecast_average,
         attrs_fn=_forecast_attrs,
     ),
