@@ -2,24 +2,24 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_DISTRIBUTION_RATE,
-    CONF_FIXED_MONTHLY_FEE,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
-    CONF_OPERATOR,
+    CONF_PRESET_OPERATOR,
+    CONF_PRICE_SOURCE,
     CONF_TARIFF,
-    CONF_TAX_RATE,
-    CONF_USE_CUSTOM_RATES,
+    PRICE_SOURCE_CUSTOM,
+    PRICE_SOURCE_PRESET,
     PRICE_ZONE_HIGH,
     PRICE_ZONE_LOW,
     PRICE_ZONE_SINGLE,
@@ -43,11 +43,13 @@ class PTETariffData:
     """Tariff data returned by the coordinator."""
 
     current_price: Decimal
-    distribution_rate: Decimal
-    fixed_monthly_fee: Decimal
-    tax_rate: Decimal
     tariff: str
     operator: str
+    price_source: str
+    price_type: str
+    preset_year: int | None
+    source: str | None
+    source_url: str | None
     current_price_zone: str
     next_price_zone_change: datetime | None
     forecast: list[PTEForecastPoint]
@@ -64,38 +66,67 @@ class PTEApiClient:
 
     def __init__(self, hass: HomeAssistant, config: dict[str, Any]) -> None:
         """Initialize the API client."""
-        self._hass = hass
+        _ = hass
         self._config = config
-        self._session = async_get_clientsession(hass)
 
     async def async_get_prices(self) -> PTETariffData:
         """Fetch current tariff data and forecast."""
-        if not self._config.get(CONF_USE_CUSTOM_RATES, True):
-            remote_data = await self._async_fetch_remote_prices()
-            if remote_data is not None:
-                return remote_data
+        price_source = self._config.get(CONF_PRICE_SOURCE, PRICE_SOURCE_PRESET)
+        if price_source == PRICE_SOURCE_CUSTOM:
+            return self._build_custom_rate_data()
+        return self._build_preset_data()
 
-        return self._build_custom_rate_data()
+    def _build_preset_data(self) -> PTETariffData:
+        """Build tariff data from bundled gross price presets."""
+        presets = _load_presets()
+        tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
+        preset_operator = self._config.get(CONF_PRESET_OPERATOR, "average")
+        tariff_data = presets["tariffs"][tariff]
+        operator = preset_operator if tariff_data["operator_required"] else "average"
+        prices = tariff_data["prices"][operator]
 
-    async def _async_fetch_remote_prices(self) -> PTETariffData | None:
-        """Fetch data from a remote source.
-
-        This skeleton intentionally does not assume one official Polish pricing API.
-        A future implementation can use `self._session` here for operator APIs,
-        RCE/RDN data sources, or vendor-specific forecast services.
-        """
-        _ = self._session
-        return None
+        high_rate = Decimal(str(prices.get(PRICE_ZONE_HIGH, prices.get("single", 0))))
+        low_rate = Decimal(str(prices.get(PRICE_ZONE_LOW, high_rate)))
+        return self._build_tariff_data(
+            high_rate=high_rate,
+            low_rate=low_rate,
+            price_source=PRICE_SOURCE_PRESET,
+            price_type=presets["price_type"],
+            preset_year=int(presets["year"]),
+            source=presets["source"],
+            source_url=presets["source_urls"][tariff.lower()],
+            operator=operator,
+        )
 
     def _build_custom_rate_data(self) -> PTETariffData:
         """Build data from user-provided rates."""
-        now = dt_util.utcnow()
-        tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
         high_rate = Decimal(str(self._config.get(CONF_HIGH_RATE, 0)))
         low_rate = Decimal(str(self._config.get(CONF_LOW_RATE, high_rate)))
-        distribution_rate = Decimal(str(self._config.get(CONF_DISTRIBUTION_RATE, 0)))
-        fixed_monthly_fee = Decimal(str(self._config.get(CONF_FIXED_MONTHLY_FEE, 0)))
-        tax_rate = Decimal(str(self._config.get(CONF_TAX_RATE, 23)))
+        return self._build_tariff_data(
+            high_rate=high_rate,
+            low_rate=low_rate,
+            price_source=PRICE_SOURCE_CUSTOM,
+            price_type="gross_kwh",
+            preset_year=None,
+            source=None,
+            source_url=None,
+            operator="custom",
+        )
+
+    def _build_tariff_data(
+        self,
+        high_rate: Decimal,
+        low_rate: Decimal,
+        price_source: str,
+        price_type: str,
+        preset_year: int | None,
+        source: str | None,
+        source_url: str | None,
+        operator: str,
+    ) -> PTETariffData:
+        """Build common tariff data from gross rates."""
+        now = dt_util.utcnow()
+        tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
 
         forecast: list[PTEForecastPoint] = []
         for offset in range(24):
@@ -120,11 +151,13 @@ class PTEApiClient:
         current_price_zone = self._select_price_zone_for_time(tariff, now)
         return PTETariffData(
             current_price=self._select_rate_for_time(tariff, now, high_rate, low_rate),
-            distribution_rate=distribution_rate,
-            fixed_monthly_fee=fixed_monthly_fee,
-            tax_rate=tax_rate,
             tariff=tariff,
-            operator=self._config[CONF_OPERATOR],
+            operator=operator,
+            price_source=price_source,
+            price_type=price_type,
+            preset_year=preset_year,
+            source=source,
+            source_url=source_url,
             current_price_zone=current_price_zone,
             next_price_zone_change=self._find_next_price_zone_change(
                 tariff,
@@ -189,3 +222,9 @@ class PTEApiClient:
                 return candidate
 
         return None
+
+
+def _load_presets() -> dict[str, Any]:
+    """Load bundled gross price presets."""
+    path = Path(__file__).with_name("data") / "presets_2026.json"
+    return json.loads(path.read_text(encoding="utf-8"))

@@ -22,14 +22,16 @@ from homeassistant.util import dt as dt_util
 
 from .api import PTETariffData
 from .const import (
-    ATTR_DISTRIBUTION_RATE,
     ATTR_FETCHED_AT,
-    ATTR_FIXED_MONTHLY_FEE,
     ATTR_FORECAST,
     ATTR_OPERATOR,
     ATTR_PRICE_ZONE,
+    ATTR_PRICE_SOURCE,
+    ATTR_PRICE_TYPE,
+    ATTR_PRESET_YEAR,
+    ATTR_SOURCE,
+    ATTR_SOURCE_URL,
     ATTR_TARIFF,
-    ATTR_TAX_RATE,
     CONF_ENERGY_ENTITY,
     CONF_TARIFF,
     DEFAULT_NAME,
@@ -55,9 +57,11 @@ def _base_attrs(data: PTETariffData) -> dict[str, Any]:
         ATTR_OPERATOR: data.operator,
         ATTR_TARIFF: data.tariff,
         ATTR_PRICE_ZONE: data.current_price_zone,
-        ATTR_DISTRIBUTION_RATE: float(data.distribution_rate),
-        ATTR_FIXED_MONTHLY_FEE: float(data.fixed_monthly_fee),
-        ATTR_TAX_RATE: float(data.tax_rate),
+        ATTR_PRICE_SOURCE: data.price_source,
+        ATTR_PRICE_TYPE: data.price_type,
+        ATTR_PRESET_YEAR: data.preset_year,
+        ATTR_SOURCE: data.source,
+        ATTR_SOURCE_URL: data.source_url,
         ATTR_FETCHED_AT: data.fetched_at.isoformat(),
         "next_price_zone_change": (
             data.next_price_zone_change.isoformat()
@@ -87,9 +91,9 @@ def _current_total_price(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> Decimal:
-    """Return total current price including distribution."""
+    """Return current gross energy price."""
     _ = hass, entry
-    return data.current_price + data.distribution_rate
+    return data.current_price
 
 
 def _current_hour_cost(
@@ -97,7 +101,7 @@ def _current_hour_cost(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> Decimal | None:
-    """Estimate current hourly cost from an optional power/energy sensor."""
+    """Estimate current cost from an optional power/energy sensor."""
     config = entry.data | entry.options
     entity_id = config.get(CONF_ENERGY_ENTITY)
     if entity_id is None:
@@ -112,7 +116,7 @@ def _current_hour_cost(
     except Exception:  # noqa: BLE001
         return None
 
-    return consumption * (data.current_price + data.distribution_rate)
+    return consumption * data.current_price
 
 
 def _forecast_min(

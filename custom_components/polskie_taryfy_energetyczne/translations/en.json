@@ -4,18 +4,15 @@
     "step": {
       "user": {
         "title": "Tariff configuration",
-        "description": "Choose your operator, tariff and rates used for calculations.",
+        "description": "Choose the gross price source, tariff and optional consumption sensor.",
         "data": {
           "name": "Name",
-          "operator": "Operator",
+          "price_source": "Price source",
+          "preset_operator": "Operator for G11 presets",
           "tariff": "Tariff",
           "energy_entity": "Energy or power sensor",
-          "use_custom_rates": "Use custom rates",
-          "high_rate": "High or single-zone rate",
-          "low_rate": "Low price zone rate",
-          "distribution_rate": "Distribution rate",
-          "fixed_monthly_fee": "Fixed monthly fee",
-          "tax_rate": "VAT (%)"
+          "high_rate": "Gross high or single-zone price",
+          "low_rate": "Gross low-zone price"
         }
       }
     },
@@ -27,18 +24,15 @@
     "step": {
       "init": {
         "title": "Change tariff and rates",
-        "description": "Update the operator, tariff, energy sensor or rates.",
+        "description": "Update the gross price source, tariff, energy sensor or prices.",
         "data": {
           "name": "Name",
-          "operator": "Operator",
+          "price_source": "Price source",
+          "preset_operator": "Operator for G11 presets",
           "tariff": "Tariff",
           "energy_entity": "Energy or power sensor",
-          "use_custom_rates": "Use custom rates",
-          "high_rate": "High or single-zone rate",
-          "low_rate": "Low price zone rate",
-          "distribution_rate": "Distribution rate",
-          "fixed_monthly_fee": "Fixed monthly fee",
-          "tax_rate": "VAT (%)"
+          "high_rate": "Gross high or single-zone price",
+          "low_rate": "Gross low-zone price"
         }
       }
     }
@@ -46,16 +40,16 @@
   "entity": {
     "sensor": {
       "current_energy_price": {
-        "name": "Current energy price"
+        "name": "Current gross energy price"
       },
       "current_hour_cost": {
-        "name": "Current cost"
+        "name": "Estimated gross cost"
       },
       "forecast_min_price": {
-        "name": "Forecast minimum price"
+        "name": "Schedule minimum gross price"
       },
       "forecast_max_price": {
-        "name": "Forecast maximum price"
+        "name": "Schedule maximum gross price"
       },
       "current_price_zone": {
         "name": "Current price zone"
@@ -67,7 +61,7 @@
         "name": "Time to price zone change"
       },
       "forecast_average_price": {
-        "name": "Forecast average price"
+        "name": "Schedule average gross price"
       }
     },
     "binary_sensor": {

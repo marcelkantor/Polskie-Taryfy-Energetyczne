@@ -22,6 +22,11 @@ from .const import (
     ATTR_FETCHED_AT,
     ATTR_OPERATOR,
     ATTR_PRICE_ZONE,
+    ATTR_PRICE_SOURCE,
+    ATTR_PRICE_TYPE,
+    ATTR_PRESET_YEAR,
+    ATTR_SOURCE,
+    ATTR_SOURCE_URL,
     ATTR_TARIFF,
     CONF_TARIFF,
     DEFAULT_NAME,
@@ -45,6 +50,11 @@ def _base_attrs(data: PTETariffData) -> dict[str, Any]:
         ATTR_OPERATOR: data.operator,
         ATTR_TARIFF: data.tariff,
         ATTR_PRICE_ZONE: data.current_price_zone,
+        ATTR_PRICE_SOURCE: data.price_source,
+        ATTR_PRICE_TYPE: data.price_type,
+        ATTR_PRESET_YEAR: data.preset_year,
+        ATTR_SOURCE: data.source,
+        ATTR_SOURCE_URL: data.source_url,
         ATTR_FETCHED_AT: data.fetched_at.isoformat(),
     }
 
@@ -135,4 +145,3 @@ class PTEBinarySensor(CoordinatorEntity[PTEDataUpdateCoordinator], BinarySensorE
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self.async_write_ha_state()
-

@@ -4,18 +4,15 @@
     "step": {
       "user": {
         "title": "Konfiguracja taryfy",
-        "description": "Wybierz operatora, taryfę i stawki używane do wyliczeń.",
+        "description": "Wybierz źródło cen brutto, taryfę i opcjonalny sensor zużycia.",
         "data": {
           "name": "Nazwa",
-          "operator": "Operator",
+          "price_source": "Źródło cen",
+          "preset_operator": "Operator dla presetów G11",
           "tariff": "Taryfa",
           "energy_entity": "Sensor zużycia energii lub mocy",
-          "use_custom_rates": "Użyj własnych stawek",
-          "high_rate": "Stawka wysoka lub jednostrefowa",
-          "low_rate": "Stawka niska",
-          "distribution_rate": "Stawka dystrybucyjna",
-          "fixed_monthly_fee": "Opłata stała miesięczna",
-          "tax_rate": "VAT (%)"
+          "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
+          "low_rate": "Cena brutto strefy niskiej"
         }
       }
     },
@@ -27,18 +24,15 @@
     "step": {
       "init": {
         "title": "Zmiana taryfy i stawek",
-        "description": "Zaktualizuj operatora, taryfę, sensor zużycia albo stawki.",
+        "description": "Zaktualizuj źródło cen brutto, taryfę, sensor zużycia albo ceny.",
         "data": {
           "name": "Nazwa",
-          "operator": "Operator",
+          "price_source": "Źródło cen",
+          "preset_operator": "Operator dla presetów G11",
           "tariff": "Taryfa",
           "energy_entity": "Sensor zużycia energii lub mocy",
-          "use_custom_rates": "Użyj własnych stawek",
-          "high_rate": "Stawka wysoka lub jednostrefowa",
-          "low_rate": "Stawka niska",
-          "distribution_rate": "Stawka dystrybucyjna",
-          "fixed_monthly_fee": "Opłata stała miesięczna",
-          "tax_rate": "VAT (%)"
+          "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
+          "low_rate": "Cena brutto strefy niskiej"
         }
       }
     }
@@ -46,16 +40,16 @@
   "entity": {
     "sensor": {
       "current_energy_price": {
-        "name": "Cena energii teraz"
+        "name": "Cena brutto energii teraz"
       },
       "current_hour_cost": {
-        "name": "Koszt bieżący"
+        "name": "Szacowany koszt brutto"
       },
       "forecast_min_price": {
-        "name": "Prognoza ceny minimalnej"
+        "name": "Minimalna cena brutto w harmonogramie"
       },
       "forecast_max_price": {
-        "name": "Prognoza ceny maksymalnej"
+        "name": "Maksymalna cena brutto w harmonogramie"
       },
       "current_price_zone": {
         "name": "Aktualna strefa cenowa"
@@ -67,7 +61,7 @@
         "name": "Czas do zmiany strefy cenowej"
       },
       "forecast_average_price": {
-        "name": "Prognoza ceny średniej"
+        "name": "Średnia cena brutto w harmonogramie"
       }
     },
     "binary_sensor": {

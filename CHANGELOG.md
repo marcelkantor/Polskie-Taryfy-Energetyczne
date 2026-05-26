@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+- Reworked pricing model around gross `PLN/kWh` prices.
+- Added bundled 2026 presets sourced from `cena-pradu.pl`.
+- Added G11 presets per operator and average G12/G12w presets.
+- Removed distribution, fixed monthly fee and VAT fields from the integration.
+- Changed integration IoT class to `local_polling` because presets are bundled.
+
 ## 0.2.2
 
 - Removed temporary compatibility fallbacks for `zone_1_rate` and `night_rate`

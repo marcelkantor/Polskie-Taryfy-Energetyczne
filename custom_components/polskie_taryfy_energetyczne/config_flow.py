@@ -17,18 +17,17 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_DISTRIBUTION_RATE,
     CONF_ENERGY_ENTITY,
-    CONF_FIXED_MONTHLY_FEE,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
-    CONF_OPERATOR,
+    CONF_PRESET_OPERATOR,
+    CONF_PRICE_SOURCE,
     CONF_TARIFF,
-    CONF_TAX_RATE,
-    CONF_USE_CUSTOM_RATES,
     DEFAULT_NAME,
     DOMAIN,
     OPERATORS,
+    PRICE_SOURCE_CUSTOM,
+    PRICE_SOURCE_PRESET,
     TARIFFS,
 )
 
@@ -53,7 +52,8 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             await self.async_set_unique_id(
-                f"{user_input[CONF_OPERATOR]}_{user_input[CONF_TARIFF]}"
+                f"{user_input[CONF_PRICE_SOURCE]}_{user_input[CONF_TARIFF]}_"
+                f"{user_input.get(CONF_PRESET_OPERATOR, 'average')}"
             )
             self._abort_if_unique_id_configured()
 
@@ -101,8 +101,26 @@ def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
                 default=values.get(CONF_NAME, DEFAULT_NAME),
             ): str,
             vol.Required(
-                CONF_OPERATOR,
-                default=values.get(CONF_OPERATOR, next(iter(OPERATORS))),
+                CONF_PRICE_SOURCE,
+                default=values.get(CONF_PRICE_SOURCE, PRICE_SOURCE_PRESET),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(
+                            value=PRICE_SOURCE_PRESET,
+                            label="Preset cena-pradu.pl",
+                        ),
+                        selector.SelectOptionDict(
+                            value=PRICE_SOURCE_CUSTOM,
+                            label="Wlasne ceny brutto",
+                        ),
+                    ],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_PRESET_OPERATOR,
+                default=values.get(CONF_PRESET_OPERATOR, next(iter(OPERATORS))),
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=[
@@ -129,28 +147,12 @@ def _tariff_schema(values: dict[str, Any] | None = None) -> vol.Schema:
                 default=values.get(CONF_ENERGY_ENTITY),
             ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
             vol.Required(
-                CONF_USE_CUSTOM_RATES,
-                default=values.get(CONF_USE_CUSTOM_RATES, True),
-            ): bool,
-            vol.Required(
                 CONF_HIGH_RATE,
-                default=values.get(CONF_HIGH_RATE, 0.75),
+                default=values.get(CONF_HIGH_RATE, 1.19),
             ): vol.Coerce(float),
             vol.Optional(
                 CONF_LOW_RATE,
-                default=values.get(CONF_LOW_RATE, 0.42),
-            ): vol.Coerce(float),
-            vol.Optional(
-                CONF_DISTRIBUTION_RATE,
-                default=values.get(CONF_DISTRIBUTION_RATE, 0.35),
-            ): vol.Coerce(float),
-            vol.Optional(
-                CONF_FIXED_MONTHLY_FEE,
-                default=values.get(CONF_FIXED_MONTHLY_FEE, 18.50),
-            ): vol.Coerce(float),
-            vol.Optional(
-                CONF_TAX_RATE,
-                default=values.get(CONF_TAX_RATE, 23.0),
+                default=values.get(CONF_LOW_RATE, 0.64),
             ): vol.Coerce(float),
         }
     )
