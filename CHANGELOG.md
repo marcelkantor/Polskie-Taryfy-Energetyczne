@@ -2,52 +2,53 @@
 
 ## 0.3.3
 
-- Added an extra coordinator refresh scheduled at the next price zone boundary.
-- Improved tariff zone switching precision for EMS automations.
+- Dodano dodatkowe odświeżenie koordynatora zaplanowane na najbliższą granicę strefy cenowej.
+- Poprawiono precyzję przełączania stref cenowych dla automatyzacji EMS.
 
 ## 0.3.2
 
-- Rounded gross price sensors and forecast price attributes to two decimal places.
-- Added suggested display precision for price and time-to-change sensors.
+- Zaokrąglono sensory cen brutto oraz atrybuty prognozy cen do dwóch miejsc po przecinku.
+- Dodano sugerowaną precyzję wyświetlania dla sensorów cen i czasu do zmiany strefy.
 
 ## 0.3.1
 
-- Split configuration into two steps so custom gross price fields are shown only
-  when the custom price source is selected.
-- Updated Polish configuration labels and descriptions.
+- Podzielono konfigurację na dwa kroki, aby pola własnych cen brutto były widoczne tylko
+  po wybraniu własnego źródła cen.
+- Zaktualizowano polskie etykiety i opisy konfiguracji.
 
 ## 0.3.0
 
-- Reworked pricing model around gross `PLN/kWh` prices.
-- Added bundled 2026 presets sourced from `cena-pradu.pl`.
-- Added G11 presets per operator and average G12/G12w presets.
-- Removed distribution, fixed monthly fee and VAT fields from the integration.
-- Changed integration IoT class to `local_polling` because presets are bundled.
+- Przebudowano model cen wokół cen brutto w `PLN/kWh`.
+- Dodano wbudowane presety na 2026 rok na podstawie danych z `cena-pradu.pl`.
+- Dodano presety G11 dla poszczególnych operatorów oraz uśrednione presety G12/G12w.
+- Usunięto z integracji pola stawek dystrybucyjnych, opłaty stałej miesięcznej i VAT.
+- Zmieniono klasę IoT integracji na `local_polling`, ponieważ presety są dostarczane lokalnie.
 
 ## 0.2.2
 
-- Removed temporary compatibility fallbacks for `zone_1_rate` and `night_rate`
-  during the testing phase.
+- Usunięto tymczasowe fallbacki zgodności dla `zone_1_rate` i `night_rate`
+  na etapie testów.
 
 ## 0.2.1
 
-- Fixed inconsistent options flow labels by replacing the remaining legacy
-  `zone_1_rate` form field with `high_rate`.
+- Poprawiono niespójne etykiety w przepływie opcji, zastępując pozostałe starsze
+  pole formularza `zone_1_rate` polem `high_rate`.
 
 ## 0.2.0
 
-- Replaced day/night wording with high/low price zone terminology.
-- Added EMS-oriented sensors for current price zone, next zone change, minutes to zone change and forecast average price.
-- Added binary sensors for low price zone and price below forecast average.
+- Zastąpiono nazewnictwo dzień/noc terminologią wysokiej i niskiej strefy cenowej.
+- Dodano sensory przydatne dla EMS: aktualna strefa cenowa, następna zmiana strefy,
+  czas do zmiany strefy oraz średnia cena z prognozy.
+- Dodano sensory binarne dla niskiej strefy cenowej oraz ceny poniżej średniej z prognozy.
 
 ## 0.1.1
 
-- Added an options flow for changing tariffs and rates after installation.
-- Added HACS brand assets.
-- Updated repository metadata and validation workflow.
-- Fixed manifest links and code owner metadata.
+- Dodano przepływ opcji do zmiany taryfy i stawek po instalacji.
+- Dodano zasoby marki dla HACS.
+- Zaktualizowano metadane repozytorium i workflow walidacji.
+- Poprawiono linki w manifeście oraz metadane właściciela kodu.
 
 ## 0.1.0
 
-- Initial Home Assistant custom integration skeleton.
-- Added HACS structure, config flow, coordinator and sensor examples.
+- Początkowy szkielet niestandardowej integracji Home Assistant.
+- Dodano strukturę HACS, config flow, koordynator i przykładowe sensory.
