@@ -23,6 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: PTEConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
 
+    entry.async_on_unload(coordinator.async_cancel_zone_refresh)
     entry.async_on_unload(entry.add_update_listener(async_update_options))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

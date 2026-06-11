@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+
+- Added an extra coordinator refresh scheduled at the next price zone boundary.
+- Improved tariff zone switching precision for EMS automations.
+
 ## 0.3.2
 
 - Rounded gross price sensors and forecast price attributes to two decimal places.
