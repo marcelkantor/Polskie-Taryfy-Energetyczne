@@ -29,6 +29,7 @@ from .const import (
     ATTR_SOURCE_URL,
     ATTR_TARIFF,
     CONF_TARIFF,
+    CREATOR,
     DEFAULT_NAME,
     DOMAIN,
     PRICE_ZONE_LOW,
@@ -123,7 +124,7 @@ class PTEBinarySensor(CoordinatorEntity[PTEDataUpdateCoordinator], BinarySensorE
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
             "name": config.get(CONF_NAME, DEFAULT_NAME),
-            "manufacturer": "Polskie Taryfy Energetyczne",
+            "manufacturer": CREATOR,
             "model": config.get(CONF_TARIFF),
         }
 

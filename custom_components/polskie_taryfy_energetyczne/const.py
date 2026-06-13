@@ -6,6 +6,7 @@ from datetime import timedelta
 
 DOMAIN = "polskie_taryfy_energetyczne"
 DEFAULT_NAME = "Polskie Taryfy Energetyczne"
+CREATOR = "Marcel Kantor"
 
 CONF_TARIFF = "tariff"
 CONF_ENERGY_ENTITY = "energy_entity"

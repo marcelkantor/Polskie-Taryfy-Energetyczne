@@ -66,19 +66,26 @@ class PTEApiClient:
 
     def __init__(self, hass: HomeAssistant, config: dict[str, Any]) -> None:
         """Initialize the API client."""
-        _ = hass
+        self._hass = hass
         self._config = config
+        self._presets: dict[str, Any] | None = None
 
     async def async_get_prices(self) -> PTETariffData:
         """Fetch current tariff data and forecast."""
         price_source = self._config.get(CONF_PRICE_SOURCE, PRICE_SOURCE_PRESET)
         if price_source == PRICE_SOURCE_CUSTOM:
             return self._build_custom_rate_data()
-        return self._build_preset_data()
+        presets = await self._async_load_presets()
+        return self._build_preset_data(presets)
 
-    def _build_preset_data(self) -> PTETariffData:
+    async def _async_load_presets(self) -> dict[str, Any]:
+        """Load bundled presets outside the event loop."""
+        if self._presets is None:
+            self._presets = await self._hass.async_add_executor_job(_load_presets)
+        return self._presets
+
+    def _build_preset_data(self, presets: dict[str, Any]) -> PTETariffData:
         """Build tariff data from bundled gross price presets."""
-        presets = _load_presets()
         tariff = self._config.get(CONF_TARIFF, TARIFF_G11)
         preset_operator = self._config.get(CONF_PRESET_OPERATOR, "average")
         tariff_data = presets["tariffs"][tariff]

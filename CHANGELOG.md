@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+
+- Usunięto niezgodny `state_class` z sensora szacowanego kosztu brutto.
+- Przeniesiono odczyt wbudowanych presetów cen poza pętlę zdarzeń Home Assistant.
+- Dodano nazwę twórcy jako producenta urządzenia integracji widocznego w Home Assistant.
+
 ## 0.3.3
 
 - Dodano dodatkowe odświeżenie koordynatora zaplanowane na najbliższą granicę strefy cenowej.
