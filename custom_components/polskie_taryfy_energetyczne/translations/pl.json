@@ -10,7 +10,8 @@
           "price_source": "Źródło cen",
           "preset_operator": "Operator dla presetów G11/G13/G14dynamic",
           "tariff": "Taryfa",
-          "energy_entity": "Sensor zużycia energii lub mocy"
+          "energy_entity": "Sensor zużycia energii lub mocy",
+          "active_energy_price_entity": "Sensor ceny energii czynnej/RCE"
         }
       },
       "custom_rates": {
@@ -41,7 +42,8 @@
           "price_source": "Źródło cen",
           "preset_operator": "Operator dla presetów G11/G13/G14dynamic",
           "tariff": "Taryfa",
-          "energy_entity": "Sensor zużycia energii lub mocy"
+          "energy_entity": "Sensor zużycia energii lub mocy",
+          "active_energy_price_entity": "Sensor ceny energii czynnej/RCE"
         }
       },
       "custom_rates": {
@@ -62,7 +64,10 @@
   "entity": {
     "sensor": {
       "current_energy_price": {
-        "name": "Cena brutto energii teraz"
+        "name": "Cena lub stawka brutto teraz"
+      },
+      "current_purchase_price": {
+        "name": "Cena zakupu brutto teraz"
       },
       "current_hour_cost": {
         "name": "Szacowany koszt brutto"

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.7
+
+- Dodano opcjonalny sensor ceny energii czynnej/RCE dla taryfy `G14dynamic`.
+- Dodano sensor pełnej ceny zakupu brutto wyliczany jako cena energii czynnej/RCE plus stawka dystrybucji G14dynamic.
+- Zmieniono nazwę sensora bieżącej ceny na neutralną, aby nie mylić stawki dystrybucji z pełną ceną zakupu.
+- Dla `G14dynamic` szacowany koszt brutto jest liczony tylko wtedy, gdy dostępna jest pełna cena zakupu.
+
 ## 0.3.6
 
 - Dodano taryfę `G14dynamic` dla operatora TAURON.

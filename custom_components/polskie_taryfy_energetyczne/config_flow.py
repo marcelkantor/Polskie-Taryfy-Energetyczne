@@ -17,6 +17,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_ACTIVE_ENERGY_PRICE_ENTITY,
     CONF_ENERGY_ENTITY,
     CONF_G14_S1_RATE,
     CONF_G14_S2_RATE,
@@ -203,6 +204,10 @@ def _base_schema(values: dict[str, Any] | None = None) -> vol.Schema:
             vol.Optional(
                 CONF_ENERGY_ENTITY,
                 default=values.get(CONF_ENERGY_ENTITY),
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Optional(
+                CONF_ACTIVE_ENERGY_PRICE_ENTITY,
+                default=values.get(CONF_ACTIVE_ENERGY_PRICE_ENTITY),
             ): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
         }
     )

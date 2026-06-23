@@ -24,19 +24,25 @@ from .api import PTETariffData
 from .const import (
     ATTR_FETCHED_AT,
     ATTR_FORECAST,
+    ATTR_ACTIVE_ENERGY_PRICE,
+    ATTR_ACTIVE_ENERGY_PRICE_ENTITY,
+    ATTR_DISTRIBUTION_PRICE,
     ATTR_OPERATOR,
     ATTR_PRICE_ZONE,
     ATTR_PRICE_SOURCE,
     ATTR_PRICE_TYPE,
     ATTR_PRESET_YEAR,
+    ATTR_PURCHASE_PRICE_AVAILABLE,
     ATTR_SOURCE,
     ATTR_SOURCE_URL,
     ATTR_TARIFF,
+    CONF_ACTIVE_ENERGY_PRICE_ENTITY,
     CONF_ENERGY_ENTITY,
     CONF_TARIFF,
     CREATOR,
     DEFAULT_NAME,
     DOMAIN,
+    TARIFF_G14DYNAMIC,
 )
 from .coordinator import PTEDataUpdateCoordinator
 
@@ -71,6 +77,17 @@ def _base_attrs(data: PTETariffData) -> dict[str, Any]:
             if data.next_price_zone_change is not None
             else None
         ),
+        ATTR_DISTRIBUTION_PRICE: (
+            float(_round_price(data.current_distribution_price))
+            if data.current_distribution_price is not None
+            else None
+        ),
+        ATTR_ACTIVE_ENERGY_PRICE: (
+            float(_round_price(data.current_active_energy_price))
+            if data.current_active_energy_price is not None
+            else None
+        ),
+        ATTR_PURCHASE_PRICE_AVAILABLE: data.current_purchase_price is not None,
     }
 
 
@@ -109,6 +126,18 @@ def _current_total_price(
     return _round_price(data.current_price)
 
 
+def _current_purchase_price(
+    data: PTETariffData,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> Decimal | None:
+    """Return current gross purchase price when available."""
+    _ = hass, entry
+    if data.current_purchase_price is not None:
+        return _round_price(data.current_purchase_price)
+    return None
+
+
 def _current_hour_cost(
     data: PTETariffData,
     hass: HomeAssistant,
@@ -129,7 +158,13 @@ def _current_hour_cost(
     except Exception:  # noqa: BLE001
         return None
 
-    return _round_price(consumption * data.current_price)
+    price = data.current_purchase_price
+    if price is None:
+        if data.tariff == TARIFF_G14DYNAMIC:
+            return None
+        price = data.current_price
+
+    return _round_price(consumption * price)
 
 
 def _forecast_min(
@@ -211,6 +246,15 @@ SENSORS: tuple[PTESensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         value_fn=_current_total_price,
+        attrs_fn=_base_attrs,
+    ),
+    PTESensorEntityDescription(
+        key="current_purchase_price",
+        translation_key="current_purchase_price",
+        native_unit_of_measurement=PRICE_UNIT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        value_fn=_current_purchase_price,
         attrs_fn=_base_attrs,
     ),
     PTESensorEntityDescription(
@@ -327,7 +371,13 @@ class PTESensor(CoordinatorEntity[PTEDataUpdateCoordinator], SensorEntity):
         """Return extra attributes."""
         if self.coordinator.data is None or self.entity_description.attrs_fn is None:
             return {}
-        return self.entity_description.attrs_fn(self.coordinator.data)
+        attrs = self.entity_description.attrs_fn(self.coordinator.data)
+        if self.entity_description.key == "current_purchase_price":
+            config = self.entry.data | self.entry.options
+            attrs[ATTR_ACTIVE_ENERGY_PRICE_ENTITY] = config.get(
+                CONF_ACTIVE_ENERGY_PRICE_ENTITY
+            )
+        return attrs
 
     @callback
     def _handle_coordinator_update(self) -> None:

@@ -15,6 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_ACTIVE_ENERGY_PRICE_ENTITY,
     CONF_G14_S1_RATE,
     CONF_G14_S2_RATE,
     CONF_G14_S3_RATE,
@@ -71,6 +72,9 @@ class PTETariffData:
     """Tariff data returned by the coordinator."""
 
     current_price: Decimal
+    current_distribution_price: Decimal | None
+    current_active_energy_price: Decimal | None
+    current_purchase_price: Decimal | None
     tariff: str
     operator: str
     price_source: str
@@ -239,8 +243,16 @@ class PTEApiClient:
         if current is None:
             raise ValueError("PSE G14dynamic schedule is empty")
 
+        active_energy_price = self._current_active_energy_price()
         return PTETariffData(
             current_price=current.price,
+            current_distribution_price=current.price,
+            current_active_energy_price=active_energy_price,
+            current_purchase_price=(
+                current.price + active_energy_price
+                if active_energy_price is not None
+                else None
+            ),
             tariff=TARIFF_G14DYNAMIC,
             operator=operator,
             price_source=price_source,
@@ -354,14 +366,18 @@ class PTEApiClient:
             )
 
         current_price_zone = self._select_price_zone_for_time(tariff, now)
+        current_price = self._select_rate_for_time(
+            tariff,
+            now,
+            high_rate,
+            medium_rate,
+            low_rate,
+        )
         return PTETariffData(
-            current_price=self._select_rate_for_time(
-                tariff,
-                now,
-                high_rate,
-                medium_rate,
-                low_rate,
-            ),
+            current_price=current_price,
+            current_distribution_price=None,
+            current_active_energy_price=None,
+            current_purchase_price=current_price,
             tariff=tariff,
             operator=operator,
             price_source=price_source,
@@ -378,6 +394,21 @@ class PTEApiClient:
             forecast=forecast,
             fetched_at=now,
         )
+
+    def _current_active_energy_price(self) -> Decimal | None:
+        """Return current active energy price from an optional HA sensor."""
+        entity_id = self._config.get(CONF_ACTIVE_ENERGY_PRICE_ENTITY)
+        if entity_id is None:
+            return None
+
+        state = self._hass.states.get(entity_id)
+        if state is None or state.state in {"unknown", "unavailable"}:
+            return None
+
+        try:
+            return Decimal(str(state.state))
+        except Exception:  # noqa: BLE001
+            return None
 
     @staticmethod
     def _select_rate_for_time(
