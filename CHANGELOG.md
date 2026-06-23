@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5
+
+- Dodano taryfę `G13` dla operatora TAURON.
+- Dodano preset cen brutto TAURON G13 wyliczony z oficjalnych stawek TAURON/URE 2026.
+- Dodano obsługę trzech stref cenowych oraz sezonowego harmonogramu G13.
+- Uwzględniono soboty, niedziele i polskie dni ustawowo wolne jako niską strefę cenową.
+
 ## 0.3.4
 
 - Usunięto niezgodny `state_class` z sensora szacowanego kosztu brutto.

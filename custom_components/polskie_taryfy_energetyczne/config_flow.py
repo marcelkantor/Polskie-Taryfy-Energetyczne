@@ -20,6 +20,7 @@ from .const import (
     CONF_ENERGY_ENTITY,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
+    CONF_MEDIUM_RATE,
     CONF_PRESET_OPERATOR,
     CONF_PRICE_SOURCE,
     CONF_TARIFF,
@@ -28,6 +29,7 @@ from .const import (
     OPERATORS,
     PRICE_SOURCE_CUSTOM,
     PRICE_SOURCE_PRESET,
+    TARIFF_G13,
     TARIFFS,
 )
 
@@ -52,6 +54,7 @@ class PTEConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            _normalize_preset_operator(user_input)
             self._config_data = user_input
             if user_input[CONF_PRICE_SOURCE] == PRICE_SOURCE_CUSTOM:
                 return await self.async_step_custom_rates()
@@ -111,6 +114,7 @@ class PTEOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage integration options."""
         if user_input is not None:
+            _normalize_preset_operator(user_input)
             self._options_data = user_input
             if user_input[CONF_PRICE_SOURCE] == PRICE_SOURCE_CUSTOM:
                 return await self.async_step_custom_rates()
@@ -157,7 +161,7 @@ def _base_schema(values: dict[str, Any] | None = None) -> vol.Schema:
                     options=[
                         selector.SelectOptionDict(
                             value=PRICE_SOURCE_PRESET,
-                            label="Preset cena-pradu.pl",
+                            label="Preset wbudowany",
                         ),
                         selector.SelectOptionDict(
                             value=PRICE_SOURCE_CUSTOM,
@@ -202,15 +206,35 @@ def _base_schema(values: dict[str, Any] | None = None) -> vol.Schema:
 def _custom_rates_schema(values: dict[str, Any] | None = None) -> vol.Schema:
     """Return the custom gross rates schema."""
     values = values or {}
-    return vol.Schema(
-        {
+    fields: dict[Any, Any] = {
+        vol.Required(
+            CONF_HIGH_RATE,
+            default=values.get(CONF_HIGH_RATE, 1.19),
+        ): vol.Coerce(float),
+    }
+
+    if values.get(CONF_TARIFF) == TARIFF_G13:
+        fields[
             vol.Required(
-                CONF_HIGH_RATE,
-                default=values.get(CONF_HIGH_RATE, 1.19),
-            ): vol.Coerce(float),
-            vol.Optional(
-                CONF_LOW_RATE,
-                default=values.get(CONF_LOW_RATE, 0.64),
-            ): vol.Coerce(float),
-        }
-    )
+                CONF_MEDIUM_RATE,
+                default=values.get(CONF_MEDIUM_RATE, 0.90),
+            )
+        ] = vol.Coerce(float)
+
+    fields[
+        vol.Optional(
+            CONF_LOW_RATE,
+            default=values.get(CONF_LOW_RATE, 0.64),
+        )
+    ] = vol.Coerce(float)
+
+    return vol.Schema(fields)
+
+
+def _normalize_preset_operator(data: dict[str, Any]) -> None:
+    """Use the only supported preset operator for G13."""
+    if (
+        data.get(CONF_PRICE_SOURCE) == PRICE_SOURCE_PRESET
+        and data.get(CONF_TARIFF) == TARIFF_G13
+    ):
+        data[CONF_PRESET_OPERATOR] = "tauron"

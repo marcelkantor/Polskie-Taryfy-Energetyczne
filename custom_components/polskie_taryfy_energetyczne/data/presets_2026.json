@@ -5,7 +5,8 @@
   "source_urls": {
     "g11": "http://cena-pradu.pl/tabela.html",
     "g12": "http://cena-pradu.pl/taryfy.html",
-    "g12w": "http://cena-pradu.pl/taryfy.html"
+    "g12w": "http://cena-pradu.pl/taryfy.html",
+    "g13": "https://bip.ure.gov.pl/download/3/20340/TauronSprzedaz.pdf"
   },
   "price_type": "gross_kwh",
   "currency": "PLN",
@@ -47,6 +48,19 @@
         "average": {
           "high": 1.28,
           "low": 0.66
+        }
+      }
+    },
+    "G13": {
+      "operator_required": true,
+      "source": "TAURON/URE",
+      "source_url": "https://bip.ure.gov.pl/download/3/20340/TauronSprzedaz.pdf",
+      "calculation_source_url": "https://www.tauron-dystrybucja.pl/-/media/offer-documents/dystrybucja/aktualna-taryfa/stawki-brutto-w-grupach-g-na-rok-2026.ashx",
+      "prices": {
+        "tauron": {
+          "high": 1.50,
+          "medium": 0.90,
+          "low": 0.63
         }
       }
     }

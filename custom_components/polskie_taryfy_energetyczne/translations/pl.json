@@ -8,7 +8,7 @@
         "data": {
           "name": "Nazwa",
           "price_source": "Źródło cen",
-          "preset_operator": "Operator dla presetów G11",
+          "preset_operator": "Operator dla presetów G11/G13",
           "tariff": "Taryfa",
           "energy_entity": "Sensor zużycia energii lub mocy"
         }
@@ -18,6 +18,7 @@
         "description": "Podaj ceny brutto w PLN/kWh.",
         "data": {
           "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
+          "medium_rate": "Cena brutto strefy średniej",
           "low_rate": "Cena brutto strefy niskiej"
         }
       }
@@ -34,7 +35,7 @@
         "data": {
           "name": "Nazwa",
           "price_source": "Źródło cen",
-          "preset_operator": "Operator dla presetów G11",
+          "preset_operator": "Operator dla presetów G11/G13",
           "tariff": "Taryfa",
           "energy_entity": "Sensor zużycia energii lub mocy"
         }
@@ -44,6 +45,7 @@
         "description": "Podaj ceny brutto w PLN/kWh.",
         "data": {
           "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
+          "medium_rate": "Cena brutto strefy średniej",
           "low_rate": "Cena brutto strefy niskiej"
         }
       }

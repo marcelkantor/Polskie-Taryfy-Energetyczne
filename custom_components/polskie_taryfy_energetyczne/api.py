@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 from .const import (
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
+    CONF_MEDIUM_RATE,
     CONF_PRESET_OPERATOR,
     CONF_PRICE_SOURCE,
     CONF_TARIFF,
@@ -22,7 +23,9 @@ from .const import (
     PRICE_SOURCE_PRESET,
     PRICE_ZONE_HIGH,
     PRICE_ZONE_LOW,
+    PRICE_ZONE_MEDIUM,
     PRICE_ZONE_SINGLE,
+    TARIFF_G13,
     TARIFF_G11,
     TARIFF_G12W,
 )
@@ -90,27 +93,36 @@ class PTEApiClient:
         preset_operator = self._config.get(CONF_PRESET_OPERATOR, "average")
         tariff_data = presets["tariffs"][tariff]
         operator = preset_operator if tariff_data["operator_required"] else "average"
+        if operator not in tariff_data["prices"]:
+            operator = next(iter(tariff_data["prices"]))
         prices = tariff_data["prices"][operator]
 
         high_rate = Decimal(str(prices.get(PRICE_ZONE_HIGH, prices.get("single", 0))))
+        medium_rate = Decimal(str(prices.get(PRICE_ZONE_MEDIUM, high_rate)))
         low_rate = Decimal(str(prices.get(PRICE_ZONE_LOW, high_rate)))
         return self._build_tariff_data(
             high_rate=high_rate,
+            medium_rate=medium_rate,
             low_rate=low_rate,
             price_source=PRICE_SOURCE_PRESET,
             price_type=presets["price_type"],
             preset_year=int(presets["year"]),
-            source=presets["source"],
-            source_url=presets["source_urls"][tariff.lower()],
+            source=tariff_data.get("source", presets["source"]),
+            source_url=tariff_data.get(
+                "source_url",
+                presets["source_urls"][tariff.lower()],
+            ),
             operator=operator,
         )
 
     def _build_custom_rate_data(self) -> PTETariffData:
         """Build data from user-provided rates."""
         high_rate = Decimal(str(self._config.get(CONF_HIGH_RATE, 0)))
+        medium_rate = Decimal(str(self._config.get(CONF_MEDIUM_RATE, high_rate)))
         low_rate = Decimal(str(self._config.get(CONF_LOW_RATE, high_rate)))
         return self._build_tariff_data(
             high_rate=high_rate,
+            medium_rate=medium_rate,
             low_rate=low_rate,
             price_source=PRICE_SOURCE_CUSTOM,
             price_type="gross_kwh",
@@ -123,6 +135,7 @@ class PTEApiClient:
     def _build_tariff_data(
         self,
         high_rate: Decimal,
+        medium_rate: Decimal,
         low_rate: Decimal,
         price_source: str,
         price_type: str,
@@ -149,6 +162,7 @@ class PTEApiClient:
                         tariff,
                         start,
                         high_rate,
+                        medium_rate,
                         low_rate,
                     ),
                     price_zone=self._select_price_zone_for_time(tariff, start),
@@ -157,7 +171,13 @@ class PTEApiClient:
 
         current_price_zone = self._select_price_zone_for_time(tariff, now)
         return PTETariffData(
-            current_price=self._select_rate_for_time(tariff, now, high_rate, low_rate),
+            current_price=self._select_rate_for_time(
+                tariff,
+                now,
+                high_rate,
+                medium_rate,
+                low_rate,
+            ),
             tariff=tariff,
             operator=operator,
             price_source=price_source,
@@ -180,12 +200,15 @@ class PTEApiClient:
         tariff: str,
         moment: datetime,
         high_rate: Decimal,
+        medium_rate: Decimal,
         low_rate: Decimal,
     ) -> Decimal:
         """Return the active energy rate for a tariff and timestamp."""
         price_zone = PTEApiClient._select_price_zone_for_time(tariff, moment)
         if price_zone == PRICE_ZONE_LOW:
             return low_rate
+        if price_zone == PRICE_ZONE_MEDIUM:
+            return medium_rate
         return high_rate
 
     @staticmethod
@@ -197,11 +220,24 @@ class PTEApiClient:
         if tariff == TARIFF_G11:
             return PRICE_ZONE_SINGLE
 
+        if tariff == TARIFF_G13:
+            if _is_non_working_day(local.date()):
+                return PRICE_ZONE_LOW
+
+            is_summer = 4 <= local.month <= 9
+            if 7 <= hour < 13:
+                return PRICE_ZONE_MEDIUM
+            if is_summer and 19 <= hour < 22:
+                return PRICE_ZONE_HIGH
+            if not is_summer and 16 <= hour < 21:
+                return PRICE_ZONE_HIGH
+            return PRICE_ZONE_LOW
+
         is_low_late_window = hour < 6 or hour >= 22
         is_low_afternoon_window = 13 <= hour < 15
-        is_weekend = local.weekday() >= 5
+        is_non_working_day = _is_non_working_day(local.date())
 
-        if tariff == TARIFF_G12W and is_weekend:
+        if tariff == TARIFF_G12W and is_non_working_day:
             return PRICE_ZONE_LOW
 
         if is_low_late_window or is_low_afternoon_window:
@@ -235,3 +271,44 @@ def _load_presets() -> dict[str, Any]:
     """Load bundled gross price presets."""
     path = Path(__file__).with_name("data") / "presets_2026.json"
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _is_non_working_day(day: date) -> bool:
+    """Return true for weekends and Polish statutory public holidays."""
+    if day.weekday() >= 5:
+        return True
+
+    easter = _easter_sunday(day.year)
+    return day in {
+        date(day.year, 1, 1),
+        date(day.year, 1, 6),
+        easter + timedelta(days=1),
+        date(day.year, 5, 1),
+        date(day.year, 5, 3),
+        easter + timedelta(days=60),
+        date(day.year, 8, 15),
+        date(day.year, 11, 1),
+        date(day.year, 11, 11),
+        date(day.year, 12, 24),
+        date(day.year, 12, 25),
+        date(day.year, 12, 26),
+    }
+
+
+def _easter_sunday(year: int) -> date:
+    """Calculate Easter Sunday date for Gregorian calendar."""
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    leaping = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * leaping) // 451
+    month = (h + leaping - 7 * m + 114) // 31
+    day = ((h + leaping - 7 * m + 114) % 31) + 1
+    return date(year, month, day)
