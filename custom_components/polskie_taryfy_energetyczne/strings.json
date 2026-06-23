@@ -8,7 +8,7 @@
         "data": {
           "name": "Nazwa",
           "price_source": "Zrodlo cen",
-          "preset_operator": "Operator dla presetow G11/G13",
+          "preset_operator": "Operator dla presetow G11/G13/G14dynamic",
           "tariff": "Taryfa",
           "energy_entity": "Sensor zuzycia energii lub mocy"
         }
@@ -19,7 +19,11 @@
         "data": {
           "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
           "medium_rate": "Cena brutto strefy sredniej",
-          "low_rate": "Cena brutto strefy niskiej"
+          "low_rate": "Cena brutto strefy niskiej",
+          "g14_s1_rate": "G14dynamic S1 - zalecane uzytkowanie",
+          "g14_s2_rate": "G14dynamic S2 - normalne uzytkowanie",
+          "g14_s3_rate": "G14dynamic S3 - zalecane oszczedzanie",
+          "g14_s4_rate": "G14dynamic S4 - wymagane ograniczenie"
         }
       }
     },
@@ -35,7 +39,7 @@
         "data": {
           "name": "Nazwa",
           "price_source": "Zrodlo cen",
-          "preset_operator": "Operator dla presetow G11/G13",
+          "preset_operator": "Operator dla presetow G11/G13/G14dynamic",
           "tariff": "Taryfa",
           "energy_entity": "Sensor zuzycia energii lub mocy"
         }
@@ -46,7 +50,11 @@
         "data": {
           "high_rate": "Cena brutto strefy wysokiej lub jednostrefowej",
           "medium_rate": "Cena brutto strefy sredniej",
-          "low_rate": "Cena brutto strefy niskiej"
+          "low_rate": "Cena brutto strefy niskiej",
+          "g14_s1_rate": "G14dynamic S1 - zalecane uzytkowanie",
+          "g14_s2_rate": "G14dynamic S2 - normalne uzytkowanie",
+          "g14_s3_rate": "G14dynamic S3 - zalecane oszczedzanie",
+          "g14_s4_rate": "G14dynamic S4 - wymagane ograniczenie"
         }
       }
     }

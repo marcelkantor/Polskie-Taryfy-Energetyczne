@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.6
+
+- Dodano taryfę `G14dynamic` dla operatora TAURON.
+- Dodano oficjalne stawki brutto dystrybucji TAURON G14dynamic dla stref S1-S4.
+- Dodano pobieranie dynamicznego harmonogramu stref z API PSE Energetyczny Kompas.
+- Dodano obsługę własnych stawek S1-S4 dla taryfy G14dynamic.
+- Zmieniono klasę IoT integracji na `cloud_polling`, ponieważ G14dynamic używa API PSE.
+
 ## 0.3.5
 
 - Dodano taryfę `G13` dla operatora TAURON.

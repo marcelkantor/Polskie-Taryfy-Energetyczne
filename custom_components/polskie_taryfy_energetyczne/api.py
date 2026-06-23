@@ -8,11 +8,17 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_G14_S1_RATE,
+    CONF_G14_S2_RATE,
+    CONF_G14_S3_RATE,
+    CONF_G14_S4_RATE,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
     CONF_MEDIUM_RATE,
@@ -21,14 +27,33 @@ from .const import (
     CONF_TARIFF,
     PRICE_SOURCE_CUSTOM,
     PRICE_SOURCE_PRESET,
+    PRICE_ZONE_G14_S1,
+    PRICE_ZONE_G14_S2,
+    PRICE_ZONE_G14_S3,
+    PRICE_ZONE_G14_S4,
     PRICE_ZONE_HIGH,
     PRICE_ZONE_LOW,
     PRICE_ZONE_MEDIUM,
     PRICE_ZONE_SINGLE,
     TARIFF_G13,
+    TARIFF_G14DYNAMIC,
     TARIFF_G11,
     TARIFF_G12W,
 )
+
+PSE_PDGSZ_URL = "https://api.raporty.pse.pl/api/pdgsz"
+G14_STATUS_TO_ZONE = {
+    0: PRICE_ZONE_G14_S1,
+    1: PRICE_ZONE_G14_S2,
+    2: PRICE_ZONE_G14_S3,
+    3: PRICE_ZONE_G14_S4,
+}
+G14_ZONE_TO_RATE_KEY = {
+    PRICE_ZONE_G14_S1: PRICE_ZONE_G14_S1,
+    PRICE_ZONE_G14_S2: PRICE_ZONE_G14_S2,
+    PRICE_ZONE_G14_S3: PRICE_ZONE_G14_S3,
+    PRICE_ZONE_G14_S4: PRICE_ZONE_G14_S4,
+}
 
 
 @dataclass(slots=True, frozen=True)
@@ -76,6 +101,11 @@ class PTEApiClient:
     async def async_get_prices(self) -> PTETariffData:
         """Fetch current tariff data and forecast."""
         price_source = self._config.get(CONF_PRICE_SOURCE, PRICE_SOURCE_PRESET)
+        if self._config.get(CONF_TARIFF) == TARIFF_G14DYNAMIC:
+            presets = await self._async_load_presets()
+            if price_source == PRICE_SOURCE_CUSTOM:
+                return await self._async_build_custom_g14dynamic_data(presets)
+            return await self._async_build_g14dynamic_data(presets)
         if price_source == PRICE_SOURCE_CUSTOM:
             return self._build_custom_rate_data()
         presets = await self._async_load_presets()
@@ -97,6 +127,7 @@ class PTEApiClient:
             operator = next(iter(tariff_data["prices"]))
         prices = tariff_data["prices"][operator]
 
+        price_type = tariff_data.get("price_type", presets["price_type"])
         high_rate = Decimal(str(prices.get(PRICE_ZONE_HIGH, prices.get("single", 0))))
         medium_rate = Decimal(str(prices.get(PRICE_ZONE_MEDIUM, high_rate)))
         low_rate = Decimal(str(prices.get(PRICE_ZONE_LOW, high_rate)))
@@ -105,7 +136,7 @@ class PTEApiClient:
             medium_rate=medium_rate,
             low_rate=low_rate,
             price_source=PRICE_SOURCE_PRESET,
-            price_type=presets["price_type"],
+            price_type=price_type,
             preset_year=int(presets["year"]),
             source=tariff_data.get("source", presets["source"]),
             source_url=tariff_data.get(
@@ -114,6 +145,159 @@ class PTEApiClient:
             ),
             operator=operator,
         )
+
+    async def _async_build_g14dynamic_data(
+        self,
+        presets: dict[str, Any],
+    ) -> PTETariffData:
+        """Build G14dynamic data from bundled rates and PSE schedule."""
+        tariff = self._config.get(CONF_TARIFF, TARIFF_G14DYNAMIC)
+        tariff_data = presets["tariffs"][tariff]
+        preset_operator = self._config.get(CONF_PRESET_OPERATOR, "tauron")
+        operator = (
+            preset_operator
+            if preset_operator in tariff_data["prices"]
+            else "tauron"
+        )
+        prices = tariff_data["prices"][operator]
+        return await self._async_build_g14dynamic_tariff_data(
+            prices={
+                PRICE_ZONE_G14_S1: Decimal(str(prices[PRICE_ZONE_G14_S1])),
+                PRICE_ZONE_G14_S2: Decimal(str(prices[PRICE_ZONE_G14_S2])),
+                PRICE_ZONE_G14_S3: Decimal(str(prices[PRICE_ZONE_G14_S3])),
+                PRICE_ZONE_G14_S4: Decimal(str(prices[PRICE_ZONE_G14_S4])),
+            },
+            price_source=PRICE_SOURCE_PRESET,
+            price_type=tariff_data.get("price_type", presets["price_type"]),
+            preset_year=int(presets["year"]),
+            source=tariff_data.get("source", presets["source"]),
+            source_url=tariff_data.get(
+                "source_url",
+                presets["source_urls"][tariff.lower()],
+            ),
+            operator=operator,
+        )
+
+    async def _async_build_custom_g14dynamic_data(
+        self,
+        presets: dict[str, Any],
+    ) -> PTETariffData:
+        """Build G14dynamic data from user-provided rates and PSE schedule."""
+        tariff = self._config.get(CONF_TARIFF, TARIFF_G14DYNAMIC)
+        tariff_data = presets["tariffs"][tariff]
+        return await self._async_build_g14dynamic_tariff_data(
+            prices={
+                PRICE_ZONE_G14_S1: Decimal(
+                    str(self._config.get(CONF_G14_S1_RATE, 0))
+                ),
+                PRICE_ZONE_G14_S2: Decimal(
+                    str(self._config.get(CONF_G14_S2_RATE, 0))
+                ),
+                PRICE_ZONE_G14_S3: Decimal(
+                    str(self._config.get(CONF_G14_S3_RATE, 0))
+                ),
+                PRICE_ZONE_G14_S4: Decimal(
+                    str(self._config.get(CONF_G14_S4_RATE, 0))
+                ),
+            },
+            price_source=PRICE_SOURCE_CUSTOM,
+            price_type=tariff_data.get("price_type", "gross_distribution_kwh"),
+            preset_year=None,
+            source=None,
+            source_url=None,
+            operator="custom",
+        )
+
+    async def _async_build_g14dynamic_tariff_data(
+        self,
+        prices: dict[str, Decimal],
+        price_source: str,
+        price_type: str,
+        preset_year: int | None,
+        source: str | None,
+        source_url: str | None,
+        operator: str,
+    ) -> PTETariffData:
+        """Build G14dynamic tariff data from rates and PSE schedule."""
+        schedule = await self._async_fetch_g14dynamic_schedule()
+        now = dt_util.utcnow()
+
+        forecast = [
+            PTEForecastPoint(
+                start=point["start"],
+                end=point["end"],
+                price=prices[G14_ZONE_TO_RATE_KEY[point["price_zone"]]],
+                price_zone=point["price_zone"],
+            )
+            for point in schedule
+        ]
+
+        current = next(
+            (point for point in forecast if point.start <= now < point.end),
+            forecast[0] if forecast else None,
+        )
+        if current is None:
+            raise ValueError("PSE G14dynamic schedule is empty")
+
+        return PTETariffData(
+            current_price=current.price,
+            tariff=TARIFF_G14DYNAMIC,
+            operator=operator,
+            price_source=price_source,
+            price_type=price_type,
+            preset_year=preset_year,
+            source=source,
+            source_url=source_url,
+            current_price_zone=current.price_zone,
+            next_price_zone_change=_find_next_forecast_zone_change(
+                forecast,
+                now,
+                current.price_zone,
+            ),
+            forecast=forecast,
+            fetched_at=now,
+        )
+
+    async def _async_fetch_g14dynamic_schedule(self) -> list[dict[str, Any]]:
+        """Fetch G14dynamic hourly schedule from PSE Energetyczny Kompas."""
+        now = dt_util.now()
+        days = [
+            now.date(),
+            (now + timedelta(days=1)).date(),
+        ]
+        session = async_get_clientsession(self._hass)
+        entries: list[dict[str, Any]] = []
+
+        for day in days:
+            day_filter = quote(
+                f"business_date eq '{day.isoformat()}' and is_active eq true",
+                safe="",
+            )
+            url = f"{PSE_PDGSZ_URL}?$select=usage_fcst,dtime&$filter={day_filter}"
+            async with session.get(url) as response:
+                response.raise_for_status()
+                payload = await response.json()
+            entries.extend(payload.get("value", []))
+
+        schedule: list[dict[str, Any]] = []
+        for entry in sorted(entries, key=lambda item: item["dtime"]):
+            zone = G14_STATUS_TO_ZONE.get(entry.get("usage_fcst"))
+            if zone is None:
+                continue
+            start = dt_util.as_utc(
+                datetime.strptime(entry["dtime"], "%Y-%m-%d %H:%M").replace(
+                    tzinfo=dt_util.DEFAULT_TIME_ZONE
+                )
+            )
+            schedule.append(
+                {
+                    "start": start,
+                    "end": start + timedelta(hours=1),
+                    "price_zone": zone,
+                }
+            )
+
+        return [point for point in schedule if point["end"] > dt_util.utcnow()]
 
     def _build_custom_rate_data(self) -> PTETariffData:
         """Build data from user-provided rates."""
@@ -271,6 +455,20 @@ def _load_presets() -> dict[str, Any]:
     """Load bundled gross price presets."""
     path = Path(__file__).with_name("data") / "presets_2026.json"
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _find_next_forecast_zone_change(
+    forecast: list[PTEForecastPoint],
+    moment: datetime,
+    current_price_zone: str,
+) -> datetime | None:
+    """Find the next price zone change in a fetched forecast."""
+    for point in forecast:
+        if point.end <= moment:
+            continue
+        if point.price_zone != current_price_zone:
+            return point.start
+    return None
 
 
 def _is_non_working_day(day: date) -> bool:

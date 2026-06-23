@@ -18,6 +18,10 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_ENERGY_ENTITY,
+    CONF_G14_S1_RATE,
+    CONF_G14_S2_RATE,
+    CONF_G14_S3_RATE,
+    CONF_G14_S4_RATE,
     CONF_HIGH_RATE,
     CONF_LOW_RATE,
     CONF_MEDIUM_RATE,
@@ -30,6 +34,7 @@ from .const import (
     PRICE_SOURCE_CUSTOM,
     PRICE_SOURCE_PRESET,
     TARIFF_G13,
+    TARIFF_G14DYNAMIC,
     TARIFFS,
 )
 
@@ -206,6 +211,28 @@ def _base_schema(values: dict[str, Any] | None = None) -> vol.Schema:
 def _custom_rates_schema(values: dict[str, Any] | None = None) -> vol.Schema:
     """Return the custom gross rates schema."""
     values = values or {}
+    if values.get(CONF_TARIFF) == TARIFF_G14DYNAMIC:
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_G14_S1_RATE,
+                    default=values.get(CONF_G14_S1_RATE, 0.0276),
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_G14_S2_RATE,
+                    default=values.get(CONF_G14_S2_RATE, 0.1098),
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_G14_S3_RATE,
+                    default=values.get(CONF_G14_S3_RATE, 0.4774),
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_G14_S4_RATE,
+                    default=values.get(CONF_G14_S4_RATE, 2.9220),
+                ): vol.Coerce(float),
+            }
+        )
+
     fields: dict[Any, Any] = {
         vol.Required(
             CONF_HIGH_RATE,
@@ -235,6 +262,6 @@ def _normalize_preset_operator(data: dict[str, Any]) -> None:
     """Use the only supported preset operator for G13."""
     if (
         data.get(CONF_PRICE_SOURCE) == PRICE_SOURCE_PRESET
-        and data.get(CONF_TARIFF) == TARIFF_G13
+        and data.get(CONF_TARIFF) in {TARIFF_G13, TARIFF_G14DYNAMIC}
     ):
         data[CONF_PRESET_OPERATOR] = "tauron"

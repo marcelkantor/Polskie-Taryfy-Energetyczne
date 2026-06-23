@@ -32,6 +32,7 @@ from .const import (
     CREATOR,
     DEFAULT_NAME,
     DOMAIN,
+    PRICE_ZONE_G14_S1,
     PRICE_ZONE_LOW,
 )
 from .coordinator import PTEDataUpdateCoordinator
@@ -62,7 +63,7 @@ def _base_attrs(data: PTETariffData) -> dict[str, Any]:
 
 def _is_low_price_zone(data: PTETariffData) -> bool:
     """Return true when the current tariff is in a low price zone."""
-    return data.current_price_zone == PRICE_ZONE_LOW
+    return data.current_price_zone in {PRICE_ZONE_LOW, PRICE_ZONE_G14_S1}
 
 
 def _is_price_below_forecast_average(data: PTETariffData) -> bool:
