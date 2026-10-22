@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.8
+
+- Naprawiono zaplanowane odświeżanie taryfy na granicy stref: callback działa teraz w pętli zdarzeń HA.
+
 ## 0.3.7
 
 - Dodano opcjonalny sensor ceny energii czynnej/RCE dla taryfy `G14dynamic`.

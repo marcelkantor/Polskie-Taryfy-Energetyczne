@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -60,6 +60,7 @@ class PTEDataUpdateCoordinator(DataUpdateCoordinator[PTETariffData]):
         if delay <= 0:
             return
 
+        @callback
         def _refresh_at_zone_change(_now) -> None:
             self._unsub_zone_refresh = None
             self.hass.async_create_task(self.async_request_refresh())
