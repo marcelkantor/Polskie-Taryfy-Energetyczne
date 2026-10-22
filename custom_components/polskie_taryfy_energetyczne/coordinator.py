@@ -63,7 +63,10 @@ class PTEDataUpdateCoordinator(DataUpdateCoordinator[PTETariffData]):
         @callback
         def _refresh_at_zone_change(_now) -> None:
             self._unsub_zone_refresh = None
-            self.hass.async_create_task(self.async_request_refresh())
+            # This callback may be invoked outside Home Assistant's event loop.
+            # Use the thread-safe task creator so the refresh is always scheduled
+            # on the loop.
+            self.hass.create_task(self.async_request_refresh())
 
         self._unsub_zone_refresh = async_call_later(
             self.hass,

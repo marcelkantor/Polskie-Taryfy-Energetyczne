@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.9
+
+- Użyto bezpiecznego wątkowo tworzenia zadania przy zaplanowanym odświeżaniu taryfy.
+
 ## 0.3.8
 
 - Naprawiono zaplanowane odświeżanie taryfy na granicy stref: callback działa teraz w pętli zdarzeń HA.
